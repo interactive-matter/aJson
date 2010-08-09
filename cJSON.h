@@ -47,9 +47,16 @@ extern "C"
 
     int type; // The type of the item, as above.
 
-    char *valuestring; // The item's string, if type==cJSON_String
-    int valueint; // The item's number, if type==cJSON_Number
-    double valuedouble; // The item's number, if type==cJSON_Number
+    union
+    {
+      char *valuestring; // The item's string, if type==cJSON_String
+      char valuebool; //the items value for true & false
+      struct
+      {
+        int valueint; // The item's number, if type==cJSON_Number
+        double valuedouble; // The item's number, if type==cJSON_Number
+      } number;
+    } value;
 
     char *string; // The item's name string, if this item is the child of, or is in the list of subitems of an object.
   } cJSON;

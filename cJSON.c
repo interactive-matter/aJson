@@ -65,8 +65,8 @@ cJSON_Delete(cJSON *c)
       next = c->next;
       if (!(c->type & cJSON_IsReference) && c->child)
         cJSON_Delete(c->child);
-      if (!(c->type & cJSON_IsReference) && c->valuestring)
-        free(c->valuestring);
+      if (!(c->type & cJSON_IsReference) && c->value.valuestring)
+        free(c->value.valuestring);
       if (c->string)
         free(c->string);
       free(c);
@@ -110,8 +110,8 @@ parse_number(cJSON *item, const char *num)
 
   n = sign * n * pow(10.0, (scale + subscale * signsubscale)); // number = +/- number.fraction * 10^+/- exponent
 
-  item->valuedouble = n;
-  item->valueint = (int) n;
+  item->value.number.valuedouble = n;
+  item->value.number.valueint = (int) n;
   item->type = cJSON_Number;
   return num;
 }
@@ -120,14 +120,15 @@ parse_number(cJSON *item, const char *num)
 static char *
 print_number(cJSON *item)
 {
+  //TODO simpler?
   char *str;
-  double d = item->valuedouble;
-  if (fabs(((double) item->valueint) - d) <= DBL_EPSILON && d <= INT_MAX && d
-      >= INT_MIN)
+  double d = item->value.number.valuedouble;
+  if (fabs(((double) item->value.number.valueint) - d) <= DBL_EPSILON && d
+      <= INT_MAX && d >= INT_MIN)
     {
       str = (char*) malloc(21); // 2^64+1 can be represented in 21 chars.
       if (str)
-        sprintf(str, "%d", item->valueint);
+        sprintf(str, "%d", item->value.number.valueint);
     }
   else
     {
@@ -226,7 +227,7 @@ parse_string(cJSON *item, const char *str)
   *ptr2 = 0;
   if (*ptr == '\"')
     ptr++;
-  item->valuestring = out;
+  item->value.valuestring = out;
   item->type = cJSON_String;
   return ptr;
 }
@@ -300,7 +301,7 @@ print_string_ptr(const char *str)
 static char *
 print_string(cJSON *item)
 {
-  return print_string_ptr(item->valuestring);
+  return print_string_ptr(item->value.valuestring);
 }
 
 // Predeclare these prototypes.
@@ -368,12 +369,13 @@ parse_value(cJSON *item, const char *value)
   if (!strncmp(value, "false", 5))
     {
       item->type = cJSON_False;
+      item->value.valuebool = -1;
       return value + 5;
     }
   if (!strncmp(value, "true", 4))
     {
       item->type = cJSON_True;
-      item->valueint = 1;
+      item->value.valuebool = 1;
       return value + 4;
     }
   if (*value == '\"')
@@ -558,8 +560,8 @@ parse_object(cJSON *item, const char *value)
   value = skip(parse_string(child, skip(value)));
   if (!value)
     return 0;
-  child->string = child->valuestring;
-  child->valuestring = 0;
+  child->string = child->value.valuestring;
+  child->value.valuestring = NULL;
   if (*value != ':')
     return 0; // fail!
   value = skip(parse_value(child, skip(value + 1))); // skip any spacing, get the value.
@@ -577,8 +579,8 @@ parse_object(cJSON *item, const char *value)
       value = skip(parse_string(child, skip(value + 1)));
       if (!value)
         return 0;
-      child->string = child->valuestring;
-      child->valuestring = 0;
+      child->string = child->value.valuestring;
+      child->value.valuestring = NULL;
       if (*value != ':')
         return 0; // fail!
       value = skip(parse_value(child, skip(value + 1))); // skip any spacing, get the value.
@@ -872,7 +874,10 @@ cJSON_CreateFalse()
 {
   cJSON *item = cJSON_New_Item();
   if (item)
-    item->type = cJSON_False;
+    {
+      item->type = cJSON_False;
+      item->value.valuebool = 0;
+    }
   return item;
 }
 cJSON *
@@ -880,9 +885,13 @@ cJSON_CreateBool(char b)
 {
   cJSON *item = cJSON_New_Item();
   if (item)
-    item->type = b ? cJSON_True : cJSON_False;
+    {
+      item->type = b ? cJSON_True : cJSON_False;
+      item->value.valuebool = b ? -1 : 0;
+    }
   return item;
 }
+
 cJSON *
 cJSON_CreateNumber(double num)
 {
@@ -890,8 +899,9 @@ cJSON_CreateNumber(double num)
   if (item)
     {
       item->type = cJSON_Number;
-      item->valuedouble = num;
-      item->valueint = (int) num;
+      //TODO what?
+      item->value.number.valuedouble = num;
+      item->value.number.valueint = (int) num;
     }
   return item;
 }
@@ -902,7 +912,7 @@ cJSON_CreateString(const char *string)
   if (item)
     {
       item->type = cJSON_String;
-      item->valuestring = cJSON_strdup(string);
+      item->value.valuestring = cJSON_strdup(string);
     }
   return item;
 }
