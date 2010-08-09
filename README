@@ -1,5 +1,7 @@
 /*
-  Copyright (c) 2009 Dave Gamble
+ Copyright (c) 2001, Interactive Matter, Marcus Nowotny
+
+ Based on the cJSON Library, Copyright (C) 2009 Dave Gamble
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -20,23 +22,18 @@
   THE SOFTWARE.
 */
 
-Welcome to cJSON.
+Welcome to aJson.
 
-cJSON aims to be the dumbest possible parser that you can get your job done with.
-It's a single file of C, and a single header file.
+aJson is the attempt to port a complete JSON implementation to Arduino. It is based on 
+the cJSON implementation, reduced in size and removing one or two features:
+- Arrays are max 255 elements big
+- There is no proper Unicode handling in this code
 
 JSON is described best here: http://www.json.org/
 It's like XML, but fat-free. You use it to move data around, store things, or just
 generally represent your program's state.
 
-
-First up, how do I build?
-Add cJSON.c to your project, and put cJSON.h somewhere in the header search path.
-For example, to build the test app:
-
-gcc cJSON.c test.c -o test -lm
-./test
-
+Here follows the description of cJSON
 
 As a library, cJSON exists to take away as much legwork as it can, but not get in your way.
 As a point of pragmatism (i.e. ignoring the truth), I'm going to say that you can use it
