@@ -33,7 +33,7 @@ JSON is described best here: http://www.json.org/
 It's like XML, but fat-free. You use it to move data around, store things, or just
 generally represent your program's state.
 
-Here follows the description of cJSON
+Here follows the description of cJSON:
 
 As a library, cJSON exists to take away as much legwork as it can, but not get in your way.
 As a point of pragmatism (i.e. ignoring the truth), I'm going to say that you can use it
