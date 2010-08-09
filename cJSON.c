@@ -189,31 +189,31 @@ parse_string(cJSON *item, const char *str)
           case 't':
             *ptr2++ = '\t';
             break;
-//no unicode support
-/*          case 'u': // transcode utf16 to utf8. DOES NOT SUPPORT SURROGATE PAIRS CORRECTLY.
-            sscanf(ptr + 1, "%4x", &uc); // get the unicode char.
-            len = 3;
-            if (uc < 0x80)
-              len = 1;
-            else if (uc < 0x800)
-              len = 2;
-            ptr2 += len;
+            //no unicode support
+            /*          case 'u': // transcode utf16 to utf8. DOES NOT SUPPORT SURROGATE PAIRS CORRECTLY.
+             sscanf(ptr + 1, "%4x", &uc); // get the unicode char.
+             len = 3;
+             if (uc < 0x80)
+             len = 1;
+             else if (uc < 0x800)
+             len = 2;
+             ptr2 += len;
 
-            switch (len)
-              {
-            case 3:
-              *--ptr2 = ((uc | 0x80) & 0xBF);
-              uc >>= 6;
-            case 2:
-              *--ptr2 = ((uc | 0x80) & 0xBF);
-              uc >>= 6;
-            case 1:
-              *--ptr2 = (uc | firstByteMark[len]);
-              }
-            ptr2 += len;
-            ptr += 4;
-            break;
-*/
+             switch (len)
+             {
+             case 3:
+             *--ptr2 = ((uc | 0x80) & 0xBF);
+             uc >>= 6;
+             case 2:
+             *--ptr2 = ((uc | 0x80) & 0xBF);
+             uc >>= 6;
+             case 1:
+             *--ptr2 = (uc | firstByteMark[len]);
+             }
+             ptr2 += len;
+             ptr += 4;
+             break;
+             */
           default:
             *ptr2++ = *ptr;
             break;
@@ -864,7 +864,10 @@ cJSON_CreateTrue()
 {
   cJSON *item = cJSON_New_Item();
   if (item)
-    item->type = cJSON_True;
+    {
+      item->type = cJSON_True;
+      item->value.valuebool = -1;
+    }
   return item;
 }
 cJSON *
@@ -995,3 +998,4 @@ cJSON_CreateStringArray(const char **strings, unsigned char count)
     }
   return a;
 }
+
