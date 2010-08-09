@@ -30,6 +30,7 @@
 #include <float.h>
 #include <limits.h>
 #include <ctype.h>
+#include <avr/pgmspace.h>
 #include "cJSON.h"
 
 static char*
@@ -78,7 +79,7 @@ cJSON_Delete(cJSON *c)
 static const char *
 parse_number(cJSON *item, const char *num)
 {
-  double n = 0, sign = 1, scale = 0;
+  float n = 0, sign = 1, scale = 0;
   int subscale = 0, signsubscale = 1;
 
   // TODO Could use sscanf for this?
@@ -116,19 +117,25 @@ parse_number(cJSON *item, const char *num)
   return num;
 }
 
+//the string constants to remove them from memory
+const char integer_format_P[] PROGMEM = "%d";
+const char double_null_format_P[] PROGMEM = "%.0f";
+const char double_e_format_P[] PROGMEM = "%e";
+const char double_format_P[] PROGMEM = "%f";
+
 // Render the number nicely from the given item into a string.
 static char *
 print_number(cJSON *item)
 {
   //TODO simpler?
   char *str;
-  double d = item->value.number.valuedouble;
-  if (fabs(((double) item->value.number.valueint) - d) <= DBL_EPSILON && d
+  float d = item->value.number.valuedouble;
+  if (fabs(((float) item->value.number.valueint) - d) <= FLT_EPSILON && d
       <= INT_MAX && d >= INT_MIN)
     {
       str = (char*) malloc(21); // 2^64+1 can be represented in 21 chars.
       if (str)
-        sprintf(str, "%d", item->value.number.valueint);
+        sprintf_P(str, integer_format_P, item->value.number.valueint);
     }
   else
     {
@@ -136,11 +143,11 @@ print_number(cJSON *item)
       if (str)
         {
           if (fabs(floor(d) - d) <= DBL_EPSILON)
-            sprintf(str, "%.0f", d);
+            sprintf_P(str, double_null_format_P, d);
           else if (fabs(d) < 1.0e-6 || fabs(d) > 1.0e9)
-            sprintf(str, "%e", d);
+            sprintf_P(str, double_e_format_P, d);
           else
-            sprintf(str, "%f", d);
+            sprintf_P(str, double_format_P, d);
         }
     }
   return str;
@@ -893,7 +900,7 @@ cJSON_CreateBool(char b)
 }
 
 cJSON *
-cJSON_CreateNumber(double num)
+cJSON_CreateNumber(float num)
 {
   cJSON *item = cJSON_New_Item();
   if (item)
@@ -967,7 +974,7 @@ cJSON_CreateFloatArray(float *numbers, unsigned char count)
   return a;
 }
 cJSON *
-cJSON_CreateDoubleArray(double *numbers, unsigned char count)
+cJSON_CreateDoubleArray(float *numbers, unsigned char count)
 {
   int i;
   cJSON *n = 0, *p = 0, *a = cJSON_CreateArray();

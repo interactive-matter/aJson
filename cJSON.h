@@ -54,7 +54,7 @@ extern "C"
       struct
       {
         int valueint; // The item's number, if type==cJSON_Number
-        double valuedouble; // The item's number, if type==cJSON_Number
+        float valuedouble; // The item's number, if type==cJSON_Number
       } number;
     } value;
 
@@ -94,7 +94,7 @@ extern "C"
   extern cJSON *
   cJSON_CreateBool(char b);
   extern cJSON *
-  cJSON_CreateNumber(double num);
+  cJSON_CreateNumber(float num);
   extern cJSON *
   cJSON_CreateString(const char *string);
   extern cJSON *
@@ -108,7 +108,7 @@ extern "C"
   extern cJSON *
   cJSON_CreateFloatArray(float *numbers, unsigned char count);
   extern cJSON *
-  cJSON_CreateDoubleArray(double *numbers, unsigned char count);
+  cJSON_CreateDoubleArray(float *numbers, unsigned char count);
   extern cJSON *
   cJSON_CreateStringArray(const char **strings, unsigned char count);
 
