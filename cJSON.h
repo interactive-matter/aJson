@@ -1,5 +1,7 @@
 /*
- Copyright (c) 2009 Dave Gamble
+ Copyright (c) 2001, Interactive Matter, Marcus Nowotny
+
+ Based on the cJSON Library, Copyright (C) 2009 Dave Gamble
  
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal

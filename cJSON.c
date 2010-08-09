@@ -1,5 +1,7 @@
 /*
- Copyright (c) 2009 Dave Gamble
+ Copyright (c) 2001, Interactive Matter, Marcus Nowotny
+
+ Based on the cJSON Library, Copyright (C) 2009 Dave Gamble
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -127,7 +129,6 @@ const char double_format_P[] PROGMEM = "%f";
 static char *
 print_number(cJSON *item)
 {
-  //TODO simpler?
   char *str;
   float d = item->value.number.valuedouble;
   if (fabs(((float) item->value.number.valueint) - d) <= FLT_EPSILON && d
@@ -163,7 +164,7 @@ parse_string(cJSON *item, const char *str)
   char *ptr2;
   char *out;
   int len = 0;
-  unsigned uc;
+
   if (*str != '\"')
     return 0; // not a string!
 
@@ -201,7 +202,8 @@ parse_string(cJSON *item, const char *str)
           case 't':
             *ptr2++ = '\t';
             break;
-          case 'u': // transcode utf16 to utf8. DOES NOT SUPPORT SURROGATE PAIRS CORRECTLY.
+//no unicode support
+/*          case 'u': // transcode utf16 to utf8. DOES NOT SUPPORT SURROGATE PAIRS CORRECTLY.
             sscanf(ptr + 1, "%4x", &uc); // get the unicode char.
             len = 3;
             if (uc < 0x80)
@@ -224,6 +226,7 @@ parse_string(cJSON *item, const char *str)
             ptr2 += len;
             ptr += 4;
             break;
+*/
           default:
             *ptr2++ = *ptr;
             break;
@@ -485,7 +488,7 @@ print_array(cJSON *item, unsigned char depth, char fmt)
   char *out = 0, *ptr, *ret;
   int len = 5;
   cJSON *child = item->child;
-  int numentries = 0, i = 0, fail = 0;
+  unsigned char numentries = 0, i = 0, fail = 0;
 
   // How many entries in the array?
   while (child)
@@ -554,7 +557,7 @@ parse_object(cJSON *item, const char *value)
 {
   cJSON *child;
   if (*value != '{')
-    return 0; // not an object!
+    return NULL; // not an object!
 
   item->type = cJSON_Object;
   value = skip(value + 1);
@@ -563,41 +566,41 @@ parse_object(cJSON *item, const char *value)
 
   item->child = child = cJSON_New_Item();
   if (!item->child)
-    return 0;
+    return NULL;
   value = skip(parse_string(child, skip(value)));
   if (!value)
-    return 0;
+    return NULL;
   child->string = child->value.valuestring;
   child->value.valuestring = NULL;
   if (*value != ':')
-    return 0; // fail!
+    return NULL; // fail!
   value = skip(parse_value(child, skip(value + 1))); // skip any spacing, get the value.
   if (!value)
-    return 0;
+    return NULL;
 
   while (*value == ',')
     {
       cJSON *new_item;
       if (!(new_item = cJSON_New_Item()))
-        return 0; // memory fail
+        return NULL; // memory fail
       child->next = new_item;
       new_item->prev = child;
       child = new_item;
       value = skip(parse_string(child, skip(value + 1)));
       if (!value)
-        return 0;
+        return NULL;
       child->string = child->value.valuestring;
       child->value.valuestring = NULL;
       if (*value != ':')
-        return 0; // fail!
+        return NULL; // fail!
       value = skip(parse_value(child, skip(value + 1))); // skip any spacing, get the value.
       if (!value)
-        return 0;
+        return NULL;
     }
 
   if (*value == '}')
     return value + 1; // end of array
-  return 0; // malformed.
+  return NULL; // malformed.
 }
 
 // Render an object to text.
@@ -606,7 +609,8 @@ print_object(cJSON *item, unsigned char depth, char fmt)
 {
   char **entries = 0, **names = 0;
   char *out = 0, *ptr, *ret, *str;
-  int len = 7, i = 0, j;
+  int len = 7;
+  unsigned char i = 0, j;
   cJSON *child = item->child;
   int numentries = 0, fail = 0;
   // Count the number of entries.
@@ -906,7 +910,6 @@ cJSON_CreateNumber(float num)
   if (item)
     {
       item->type = cJSON_Number;
-      //TODO what?
       item->value.number.valuedouble = num;
       item->value.number.valueint = (int) num;
     }
