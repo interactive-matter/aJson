@@ -35,19 +35,6 @@
 #include <avr/pgmspace.h>
 #include "cJSON.h"
 
-static char*
-cJSON_strdup(const char* str)
-{
-  size_t len;
-  char* copy;
-
-  len = strlen(str) + 1;
-  if (!(copy = (char*) malloc(len)))
-    return 0;
-  memcpy(copy, str, len);
-  return copy;
-}
-
 // Internal constructor.
 static cJSON *
 cJSON_New_Item()
@@ -251,7 +238,7 @@ print_string_ptr(const char *str)
   int len = 0;
 
   if (!str)
-    return cJSON_strdup("");
+    return strdup("");
   ptr = str;
   while (*ptr && ++len)
     {
@@ -418,13 +405,13 @@ print_value(cJSON *item, unsigned char depth, char fmt)
   switch ((item->type) & 255)
     {
   case cJSON_NULL:
-    out = cJSON_strdup("null");
+    out = strdup("null");
     break;
   case cJSON_False:
-    out = cJSON_strdup("false");
+    out = strdup("false");
     break;
   case cJSON_True:
-    out = cJSON_strdup("true");
+    out = strdup("true");
     break;
   case cJSON_Number:
     out = print_number(item);
@@ -776,7 +763,7 @@ cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
     return;
   if (item->string)
     free(item->string);
-  item->string = cJSON_strdup(string);
+  item->string = strdup(string);
   cJSON_AddItemToArray(object, item);
 }
 void
@@ -858,7 +845,7 @@ cJSON_ReplaceItemInObject(cJSON *object, const char *string, cJSON *newitem)
     i++, c = c->next;
   if (c)
     {
-      newitem->string = cJSON_strdup(string);
+      newitem->string = strdup(string);
       cJSON_ReplaceItemInArray(object, i, newitem);
     }
 }
@@ -922,7 +909,7 @@ cJSON_CreateString(const char *string)
   if (item)
     {
       item->type = cJSON_String;
-      item->value.valuestring = cJSON_strdup(string);
+      item->value.valuestring = strdup(string);
     }
   return item;
 }
@@ -947,7 +934,7 @@ cJSON_CreateObject()
 cJSON *
 cJSON_CreateIntArray(int *numbers, unsigned char count)
 {
-  int i;
+  unsigned char i;
   cJSON *n = 0, *p = 0, *a = cJSON_CreateArray();
   for (i = 0; a && i < count; i++)
     {
@@ -963,7 +950,7 @@ cJSON_CreateIntArray(int *numbers, unsigned char count)
 cJSON *
 cJSON_CreateFloatArray(float *numbers, unsigned char count)
 {
-  int i;
+  unsigned char i;
   cJSON *n = 0, *p = 0, *a = cJSON_CreateArray();
   for (i = 0; a && i < count; i++)
     {
@@ -979,7 +966,7 @@ cJSON_CreateFloatArray(float *numbers, unsigned char count)
 cJSON *
 cJSON_CreateDoubleArray(float *numbers, unsigned char count)
 {
-  int i;
+  unsigned char i;
   cJSON *n = 0, *p = 0, *a = cJSON_CreateArray();
   for (i = 0; a && i < count; i++)
     {
@@ -995,7 +982,7 @@ cJSON_CreateDoubleArray(float *numbers, unsigned char count)
 cJSON *
 cJSON_CreateStringArray(const char **strings, unsigned char count)
 {
-  int i;
+  unsigned char i;
   cJSON *n = 0, *p = 0, *a = cJSON_CreateArray();
   for (i = 0; a && i < count; i++)
     {
