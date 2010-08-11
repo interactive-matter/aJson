@@ -59,14 +59,14 @@ aJson_Object* aJsonClass::newItem() {
 }
 
 // Delete a aJson_Object structure.
-void aJsonClass::deleteAJsonObject(aJson_Object *c)
+void aJsonClass::deleteItem(aJson_Object *c)
 {
   aJson_Object *next;
   while (c)
     {
       next = c->next;
       if (!(c->type & cJSON_IsReference) && c->child)
-        deleteAJsonObject(c->child);
+        deleteItem(c->child);
       if (!(c->type & cJSON_IsReference) && c->value.valuestring)
         free(c->value.valuestring);
       if (c->string)
@@ -321,7 +321,7 @@ aJson_Object* aJsonClass::parse(const char *value)
 
   if (!parseValue(c, skip(value)))
     {
-      deleteAJsonObject(c);
+      deleteItem(c);
       return 0;
     }
   return c;
@@ -765,7 +765,7 @@ aJson_Object* aJsonClass::detachItemFromArray(aJson_Object *array, unsigned char
 }
 void aJsonClass::deleteItemFromArray(aJson_Object *array, unsigned char which)
 {
-  deleteAJsonObject(detachItemFromArray(array, which));
+  deleteItem(detachItemFromArray(array, which));
 }
 aJson_Object* aJsonClass::detachItemFromObject(aJson_Object *object, const char *string)
 {
@@ -779,7 +779,7 @@ aJson_Object* aJsonClass::detachItemFromObject(aJson_Object *object, const char 
 }
 void aJsonClass::deleteItemFromObject(aJson_Object *object, const char *string)
 {
-  deleteAJsonObject(detachItemFromObject(object, string));
+  deleteItem(detachItemFromObject(object, string));
 }
 
 // Replace array/object items with new ones.
@@ -799,7 +799,7 @@ void aJsonClass::replaceItemInArray(aJson_Object *array, unsigned char which, aJ
   else
     newitem->prev->next = newitem;
   c->next = c->prev = 0;
-  deleteAJsonObject(c);
+  deleteItem(c);
 }
 void aJsonClass::replaceItemInObject(aJson_Object *object, const char *string, aJson_Object *newitem)
 {

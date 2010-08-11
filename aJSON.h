@@ -74,7 +74,7 @@ public:
 	// Render a aJson_Object entity to text for transfer/storage without any formatting. Free the char* when finished.
 	char* printUnformatted(aJson_Object *item);
 	// Delete a aJson_Object entity and all sub-entities.
-	void deleteAJsonObject(aJson_Object *c);
+	void deleteItem(aJson_Object *c);
 
 	// Returns the number of items in an array (or object).
 	unsigned char getArraySize(aJson_Object *array);
@@ -147,5 +147,7 @@ private:
 	aJson_Object* createReference(aJson_Object *item);
 
 };
+
+extern aJsonClass aJson;
 
 #endif
