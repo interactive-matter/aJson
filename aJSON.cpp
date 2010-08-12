@@ -44,10 +44,10 @@
  ******************************************************************************/
 
 //the string constants to remove them from memory
-static const prog_char* PROGMEM integer_format_P  = "%d";
-static const prog_char* PROGMEM double_null_format_P = "%.0f";
-static const prog_char* PROGMEM double_e_format_P = "%e";
-static const prog_char* PROGMEM double_format_P = "%f";
+const prog_char PROGMEM integer_format_P[]  = "%d";
+const prog_char PROGMEM double_null_format_P[] = "%.0f";
+const prog_char PROGMEM double_e_format_P[] = "%e";
+const prog_char PROGMEM double_format_P[] = "%f";
 
 
 // Internal constructor.
@@ -330,11 +330,7 @@ aJson_Object* aJsonClass::parse(const char *value)
 // Render a aJson_Object item/entity/structure to text.
 char* aJsonClass::print(aJson_Object *item)
 {
-  return printValue(item, 0, 1);
-}
-char* aJsonClass::printUnformatted(aJson_Object *item)
-{
-  return printValue(item, 0, 0);
+  return printValue(item);
 }
 
 // Parser core - when encountering text, process appropriately.
@@ -380,7 +376,7 @@ const char* aJsonClass::parseValue(aJson_Object *item, const char *value)
 }
 
 // Render a value to text.
-char* aJsonClass::printValue(aJson_Object *item, unsigned char depth, char fmt)
+char* aJsonClass::printValue(aJson_Object *item)
 {
   char *out = NULL;
   if (!item)
@@ -403,10 +399,10 @@ char* aJsonClass::printValue(aJson_Object *item, unsigned char depth, char fmt)
     out = printString(item);
     break;
   case cJSON_Array:
-    out = printArray(item, depth, fmt);
+    out = printArray(item);
     break;
   case cJSON_Object:
-    out = printObject(item, depth, fmt);
+    out = printObject(item);
     break;
     }
   return out;
@@ -450,7 +446,7 @@ const char* aJsonClass::parseArray(aJson_Object *item, const char *value)
 }
 
 // Render an array to text
-char* aJsonClass::printArray(aJson_Object *item, unsigned char depth, char fmt)
+char* aJsonClass::printArray(aJson_Object *item)
 {
   char **entries;
   char *out = 0, *ptr, *ret;
@@ -470,10 +466,10 @@ char* aJsonClass::printArray(aJson_Object *item, unsigned char depth, char fmt)
   child = item->child;
   while (child && !fail)
     {
-      ret = printValue(child, depth + 1, fmt);
+      ret = printValue(child);
       entries[i++] = ret;
       if (ret)
-        len += strlen(ret) + 2 + (fmt ? 1 : 0);
+        len += strlen(ret) + 2;
       else
         fail = 1;
       child = child->next;
@@ -507,8 +503,6 @@ char* aJsonClass::printArray(aJson_Object *item, unsigned char depth, char fmt)
       if (i != numentries - 1)
         {
           *ptr++ = ',';
-          if (fmt)
-            *ptr++ = ' ';
           *ptr = 0;
         }
       free(entries[i]);
@@ -571,12 +565,12 @@ const char* aJsonClass::parseObject(aJson_Object *item, const char *value)
 }
 
 // Render an object to text.
-char* aJsonClass::printObject(aJson_Object *item, unsigned char depth, char fmt)
+char* aJsonClass::printObject(aJson_Object *item)
 {
   char **entries = 0, **names = 0;
   char *out = 0, *ptr, *ret, *str;
   int len = 7;
-  unsigned char i = 0, j;
+  unsigned char i = 0;
   aJson_Object *child = item->child;
   unsigned char numentries = 0, fail = 0;
   // Count the number of entries.
@@ -597,15 +591,12 @@ char* aJsonClass::printObject(aJson_Object *item, unsigned char depth, char fmt)
 
   // Collect all the results into our arrays:
   child = item->child;
-  depth++;
-  if (fmt)
-    len += depth;
   while (child)
     {
       names[i] = str = printStringPtr(child->string);
-      entries[i++] = ret = printValue(child, depth, fmt);
+      entries[i++] = ret = printValue(child);
       if (str && ret)
-        len += strlen(ret) + strlen(str) + 2 + (fmt ? 2 + depth : 0);
+        len += strlen(ret) + strlen(str) + 2;
       else
         fail = 1;
       child = child->next;
@@ -635,25 +626,16 @@ char* aJsonClass::printObject(aJson_Object *item, unsigned char depth, char fmt)
   // Compose the output:
   *out = '{';
   ptr = out + 1;
-  if (fmt)
-    *ptr++ = '\n';
   *ptr = 0;
   for (i = 0; i < numentries; i++)
     {
-      if (fmt)
-        for (j = 0; j < depth; j++)
-          *ptr++ = '\t';
       strcpy(ptr, names[i]);
       ptr += strlen(names[i]);
       *ptr++ = ':';
-      if (fmt)
-        *ptr++ = '\t';
       strcpy(ptr, entries[i]);
       ptr += strlen(entries[i]);
       if (i != numentries - 1)
         *ptr++ = ',';
-      if (fmt)
-        *ptr++ = '\n';
       *ptr = 0;
       free(names[i]);
       free(entries[i]);
@@ -661,9 +643,6 @@ char* aJsonClass::printObject(aJson_Object *item, unsigned char depth, char fmt)
 
   free(names);
   free(entries);
-  if (fmt)
-    for (i = 0; i < depth - 1; i++)
-      *ptr++ = '\t';
   *ptr++ = '}';
   *ptr++ = 0;
   return out;
