@@ -2,9 +2,12 @@
 #include "aJSON.h"
 #include <avr/pgmspace.h>
 
-const prog_char PROGMEM PARSING_OBJECT[] ="Parsing String";
-const prog_char PROGMEM ERROR_PARSING_OBJECT[] ="Error parsing Object";
-const prog_char PROGMEM SUCCESSFULLY_PARSED_OBJECT[] ="Successfully parsed Object";
+const prog_char PROGMEM RETRIEVING_NAME[] ="Retrieving name\n";
+const prog_char PROGMEM ERROR_RETRIEVING_NAME[] ="Error retrieving name\n";
+const prog_char PROGMEM SUCCESSFULLY_RETRIEVED_NAME[] ="Successfully retrieved Name:";
+const prog_char PROGMEM PARSING_OBJECT[] ="Parsing String\n";
+const prog_char PROGMEM ERROR_PARSING_OBJECT[] ="Error parsing Object\n";
+const prog_char PROGMEM SUCCESSFULLY_PARSED_OBJECT[] ="Successfully parsed Object\n";
 const prog_char PROGMEM DELETING_OBJECT_STRING[] = "Deleting the object\n";
 const prog_char PROGMEM FORMAT_FAILED_STRING[] = "Failed to create Format Object\n";
 const prog_char PROGMEM OUTPUT_STRING_ERROR[] = "Error creating output String\n";
@@ -94,6 +97,14 @@ void setup() {
 		printProgStr(SUCCESSFULLY_PARSED_OBJECT);
 	} else {
 		printProgStr(ERROR_PARSING_OBJECT);
+		return;
+	}
+	aJson_Object* name = aJson.getObjectItem(root,"name");
+	if (name!=NULL) {
+		printProgStr(SUCCESSFULLY_RETRIEVED_NAME);
+		Serial.println(name->value.valuestring);
+	} else {
+		printProgStr(ERROR_RETRIEVING_NAME);
 		return;
 	}
 
