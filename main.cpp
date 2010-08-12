@@ -84,27 +84,27 @@ void setup() {
 	if (string != NULL) {
 		Serial.println(string);
 	} else {
-		printProgStr(OUTPUT_STRING_ERROR);
+		printProgStr( OUTPUT_STRING_ERROR);
 	}
 
-	printProgStr(DELETING_OBJECT_STRING);
+	printProgStr( DELETING_OBJECT_STRING);
 	aJson.deleteItem(root);
 
-	printProgStr(PARSING_OBJECT);
+	printProgStr( PARSING_OBJECT);
 	root = aJson.parse(string);
 	free(string);
-	if (root!=NULL) {
-		printProgStr(SUCCESSFULLY_PARSED_OBJECT);
+	if (root != NULL) {
+		printProgStr( SUCCESSFULLY_PARSED_OBJECT);
 	} else {
-		printProgStr(ERROR_PARSING_OBJECT);
+		printProgStr( ERROR_PARSING_OBJECT);
 		return;
 	}
-	aJson_Object* name = aJson.getObjectItem(root,"name");
-	if (name!=NULL) {
-		printProgStr(SUCCESSFULLY_RETRIEVED_NAME);
+	aJson_Object* name = aJson.getObjectItem(root, "name");
+	if (name != NULL) {
+		printProgStr( SUCCESSFULLY_RETRIEVED_NAME);
 		Serial.println(name->value.valuestring);
 	} else {
-		printProgStr(ERROR_RETRIEVING_NAME);
+		printProgStr( ERROR_RETRIEVING_NAME);
 		return;
 	}
 
@@ -112,7 +112,6 @@ void setup() {
 
 // the loop() method runs over and over again,
 // as long as the Arduino has power
-
 void loop() {
 }
 
