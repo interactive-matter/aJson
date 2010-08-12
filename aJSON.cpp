@@ -382,10 +382,10 @@ const char* aJsonClass::parseValue(aJson_Object *item, const char *value)
 // Render a value to text.
 char* aJsonClass::printValue(aJson_Object *item, unsigned char depth, char fmt)
 {
-  char *out = 0;
+  char *out = NULL;
   if (!item)
-    return 0;
-  switch ((item->type) & 255)
+    return NULL;
+  switch (item->type)
     {
   case cJSON_NULL:
     out = strdup("null");
@@ -578,7 +578,7 @@ char* aJsonClass::printObject(aJson_Object *item, unsigned char depth, char fmt)
   int len = 7;
   unsigned char i = 0, j;
   aJson_Object *child = item->child;
-  int numentries = 0, fail = 0;
+  unsigned char numentries = 0, fail = 0;
   // Count the number of entries.
   while (child)
     numentries++, child = child->next;
