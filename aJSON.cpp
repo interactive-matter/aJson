@@ -111,7 +111,7 @@ const char* aJsonClass::parseNumber(aJson_Object *item, const char *num)
 
   n = sign * n * pow(10.0, (scale + subscale * signsubscale)); // number = +/- number.fraction * 10^+/- exponent
 
-  item->value.number.valuedouble = n;
+  item->value.number.valuefloat = n;
   item->value.number.valueint = (int) n;
   item->type = cJSON_Number;
   return num;
@@ -121,7 +121,7 @@ const char* aJsonClass::parseNumber(aJson_Object *item, const char *num)
 char* aJsonClass::printNumber(aJson_Object *item)
 {
   char *str;
-  float d = item->value.number.valuedouble;
+  float d = item->value.number.valuefloat;
   if (fabs(((float) item->value.number.valueint) - d) <= FLT_EPSILON && d
       <= INT_MAX && d >= INT_MIN)
     {
@@ -860,7 +860,7 @@ aJson_Object* aJsonClass::createNumber(float num)
   if (item)
     {
       item->type = cJSON_Number;
-      item->value.number.valuedouble = num;
+      item->value.number.valuefloat = num;
       item->value.number.valueint = (int) num;
     }
   return item;

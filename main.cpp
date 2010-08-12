@@ -75,6 +75,7 @@ void setup() {
 		return;
 	}
 
+
 	printProgStr( RESULT_PRINTING_STRING);
 	string = aJson.print(root);
 	if (string != NULL) {
