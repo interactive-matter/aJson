@@ -135,13 +135,13 @@ private:
 	const char* skip(const char *in);
 
 	const char* parseValue(aJson_Object *item, const char *value);
-	char* printValue(aJson_Object *item, unsigned char depth, char fmt);
+	char* printValue(aJson_Object *item);
 
 	const char* parseArray(aJson_Object *item, const char *value);
-	char* printArray(aJson_Object *item, unsigned char depth, char fmt);
+	char* printArray(aJson_Object *item);
 
 	const char* parseObject(aJson_Object *item, const char *value);
-	char* printObject(aJson_Object *item, unsigned char depth, char fmt);
+	char* printObject(aJson_Object *item);
 	void suffixObject(aJson_Object *prev, aJson_Object *item);
 
 	aJson_Object* createReference(aJson_Object *item);
