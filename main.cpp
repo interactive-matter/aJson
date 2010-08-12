@@ -2,6 +2,9 @@
 #include "aJSON.h"
 #include <avr/pgmspace.h>
 
+const prog_char PROGMEM PARSING_OBJECT[] ="Parsing String";
+const prog_char PROGMEM ERROR_PARSING_OBJECT[] ="Error parsing Object";
+const prog_char PROGMEM SUCCESSFULLY_PARSED_OBJECT[] ="Successfully parsed Object";
 const prog_char PROGMEM DELETING_OBJECT_STRING[] = "Deleting the object\n";
 const prog_char PROGMEM FORMAT_FAILED_STRING[] = "Failed to create Format Object\n";
 const prog_char PROGMEM OUTPUT_STRING_ERROR[] = "Error creating output String\n";
@@ -52,10 +55,7 @@ void setup() {
 	printProgStr( ADDING_NAME_STRING);
 	aJson.addItemToObject(root, "name", aJson.createString(
 			"Jack (\"Bee\") Nimble"));
-	printProgStr( CREATING_FROMAT_STRING);
-	char* string = aJson.print(root);
-	Serial.println(string);
-	free(string);
+/*	printProgStr( CREATING_FROMAT_STRING);
 	aJson_Object* fmt = aJson.createObject();
 	if (fmt != NULL) {
 		printProgStr( ADDING_FORMAT_STRING);
@@ -74,19 +74,28 @@ void setup() {
 		printProgStr( FORMAT_FAILED_STRING);
 		return;
 	}
-
+*/
 
 	printProgStr( RESULT_PRINTING_STRING);
-	string = aJson.print(root);
+	char* string = aJson.print(root);
 	if (string != NULL) {
 		Serial.println(string);
-		free(string);
 	} else {
-		printProgStr( OUTPUT_STRING_ERROR);
+		printProgStr(OUTPUT_STRING_ERROR);
 	}
 
-	printProgStr( DELETING_OBJECT_STRING);
+	printProgStr(DELETING_OBJECT_STRING);
 	aJson.deleteItem(root);
+
+	printProgStr(PARSING_OBJECT);
+	root = aJson.parse(string);
+	free(string);
+	if (root!=NULL) {
+		printProgStr(SUCCESSFULLY_PARSED_OBJECT);
+	} else {
+		printProgStr(ERROR_PARSING_OBJECT);
+		return;
+	}
 
 }
 
