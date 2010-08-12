@@ -51,7 +51,7 @@ typedef struct aJson_Object {
 		char valuebool; //the items value for true & false
 		struct {
 			int valueint; // The item's number, if type==cJSON_Number
-			float valuedouble; // The item's number, if type==cJSON_Number
+			float valuefloat; // The item's number, if type==cJSON_Number
 		} number;
 	} value;
 
