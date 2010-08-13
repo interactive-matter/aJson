@@ -65,9 +65,9 @@ void aJsonClass::deleteItem(aJsonObject *c)
   while (c)
     {
       next = c->next;
-      if (!(c->type & cJSON_IsReference) && c->child)
+      if (!(c->type & aJson_IsReference) && c->child)
         deleteItem(c->child);
-      if (!(c->type & cJSON_IsReference) && c->value.valuestring)
+      if (!(c->type & aJson_IsReference) && c->value.valuestring)
         free(c->value.valuestring);
       if (c->string)
         free(c->string);
@@ -113,7 +113,7 @@ const char* aJsonClass::parseNumber(aJsonObject *item, const char *num)
 
   item->value.number.valuefloat = n;
   item->value.number.valueint = (int) n;
-  item->type = cJSON_Number;
+  item->type = aJson_Number;
   return num;
 }
 
@@ -229,7 +229,7 @@ const char* aJsonClass::parseString(aJsonObject *item, const char *str)
   if (*ptr == '\"')
     ptr++;
   item->value.valuestring = out;
-  item->type = cJSON_String;
+  item->type = aJson_String;
   return ptr;
 }
 
@@ -340,18 +340,18 @@ const char* aJsonClass::parseValue(aJsonObject *item, const char *value)
     return 0; // Fail on null.
   if (!strncmp(value, "null", 4))
     {
-      item->type = cJSON_NULL;
+      item->type = aJson_NULL;
       return value + 4;
     }
   if (!strncmp(value, "false", 5))
     {
-      item->type = cJSON_False;
+      item->type = aJson_False;
       item->value.valuebool = -1;
       return value + 5;
     }
   if (!strncmp(value, "true", 4))
     {
-      item->type = cJSON_True;
+      item->type = aJson_True;
       item->value.valuebool = 1;
       return value + 4;
     }
@@ -383,25 +383,25 @@ char* aJsonClass::printValue(aJsonObject *item)
     return NULL;
   switch (item->type)
     {
-  case cJSON_NULL:
+  case aJson_NULL:
     out = strdup("null");
     break;
-  case cJSON_False:
+  case aJson_False:
     out = strdup("false");
     break;
-  case cJSON_True:
+  case aJson_True:
     out = strdup("true");
     break;
-  case cJSON_Number:
+  case aJson_Number:
     out = printNumber(item);
     break;
-  case cJSON_String:
+  case aJson_String:
     out = printString(item);
     break;
-  case cJSON_Array:
+  case aJson_Array:
     out = printArray(item);
     break;
-  case cJSON_Object:
+  case aJson_Object:
     out = printObject(item);
     break;
     }
@@ -415,7 +415,7 @@ const char* aJsonClass::parseArray(aJsonObject *item, const char *value)
   if (*value != '[')
     return 0; // not an array!
 
-  item->type = cJSON_Array;
+  item->type = aJson_Array;
   value = skip(value + 1);
   if (*value == ']')
     return value + 1; // empty array.
@@ -520,7 +520,7 @@ const char* aJsonClass::parseObject(aJsonObject *item, const char *value)
   if (*value != '{')
     return NULL; // not an object!
 
-  item->type = cJSON_Object;
+  item->type = aJson_Object;
   value = skip(value + 1);
   if (*value == '}')
     return value + 1; // empty array.
@@ -686,7 +686,7 @@ aJsonObject* aJsonClass::createReference(aJsonObject *item)
     return 0;
   memcpy(ref, item, sizeof(aJsonObject));
   ref->string = 0;
-  ref->type |= cJSON_IsReference;
+  ref->type |= aJson_IsReference;
   ref->next = ref->prev = 0;
   return ref;
 }
@@ -798,7 +798,7 @@ aJsonObject* aJsonClass::createNull()
 {
   aJsonObject *item = newItem();
   if (item)
-    item->type = cJSON_NULL;
+    item->type = aJson_NULL;
   return item;
 }
 
@@ -807,7 +807,7 @@ aJsonObject* aJsonClass::createTrue()
   aJsonObject *item = newItem();
   if (item)
     {
-      item->type = cJSON_True;
+      item->type = aJson_True;
       item->value.valuebool = -1;
     }
   return item;
@@ -817,7 +817,7 @@ aJsonObject* aJsonClass::createFalse()
   aJsonObject *item = newItem();
   if (item)
     {
-      item->type = cJSON_False;
+      item->type = aJson_False;
       item->value.valuebool = 0;
     }
   return item;
@@ -827,7 +827,7 @@ aJsonObject* aJsonClass::createBool(char b)
   aJsonObject *item = newItem();
   if (item)
     {
-      item->type = b ? cJSON_True : cJSON_False;
+      item->type = b ? aJson_True : aJson_False;
       item->value.valuebool = b ? -1 : 0;
     }
   return item;
@@ -838,7 +838,7 @@ aJsonObject* aJsonClass::createNumber(float num)
   aJsonObject *item = newItem();
   if (item)
     {
-      item->type = cJSON_Number;
+      item->type = aJson_Number;
       item->value.number.valuefloat = num;
       item->value.number.valueint = (int) num;
     }
@@ -850,7 +850,7 @@ aJsonObject* aJsonClass::createString(const char *string)
   aJsonObject *item = newItem();
   if (item)
     {
-      item->type = cJSON_String;
+      item->type = aJson_String;
       item->value.valuestring = strdup(string);
     }
   return item;
@@ -860,14 +860,14 @@ aJsonObject* aJsonClass::createArray()
 {
   aJsonObject *item = newItem();
   if (item)
-    item->type = cJSON_Array;
+    item->type = aJson_Array;
   return item;
 }
 aJsonObject* aJsonClass::createObject()
 {
   aJsonObject *item = newItem();
   if (item)
-    item->type = cJSON_Object;
+    item->type = aJson_Object;
   return item;
 }
 
