@@ -29,15 +29,15 @@
  * Definitions
  ******************************************************************************/
 // cJSON Types:
-#define cJSON_False 0
-#define cJSON_True 1
-#define cJSON_NULL 2
-#define cJSON_Number 3
-#define cJSON_String 4
-#define cJSON_Array 5
-#define cJSON_Object 6
+#define aJson_False 0
+#define aJson_True 1
+#define aJson_NULL 2
+#define aJson_Number 3
+#define aJson_String 4
+#define aJson_Array 5
+#define aJson_Object 6
 
-#define cJSON_IsReference 128
+#define aJson_IsReference 128
 
 // The cJSON structure:
 typedef struct aJsonObject {
@@ -47,16 +47,16 @@ typedef struct aJsonObject {
 	char type; // The type of the item, as above.
 
 	union {
-		char *valuestring; // The item's string, if type==cJSON_String
+		char *valuestring; // The item's string, if type==aJson_String
 		char valuebool; //the items value for true & false
 		struct {
-			int valueint; // The item's number, if type==cJSON_Number
-			float valuefloat; // The item's number, if type==cJSON_Number
+			int valueint; // The item's number, if type==aJson_Number
+			float valuefloat; // The item's number, if type==aJson_Number
 		} number;
 	} value;
 
 	char *string; // The item's name string, if this item is the child of, or is in the list of subitems of an object.
-} aJson_Object;
+} aJsonObject;
 
 class aJsonClass {
 	/******************************************************************************
