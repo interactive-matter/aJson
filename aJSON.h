@@ -40,9 +40,9 @@
 #define cJSON_IsReference 128
 
 // The cJSON structure:
-typedef struct aJson_Object {
-	struct aJson_Object *next, *prev; // next/prev allow you to walk array/object chains. Alternatively, use GetArraySize/GetArrayItem/GetObjectItem
-	struct aJson_Object *child; // An array or object item will have a child pointer pointing to a chain of the items in the array/object.
+typedef struct aJsonObject {
+	struct aJsonObject *next, *prev; // next/prev allow you to walk array/object chains. Alternatively, use GetArraySize/GetArrayItem/GetObjectItem
+	struct aJsonObject *child; // An array or object item will have a child pointer pointing to a chain of the items in the array/object.
 
 	char type; // The type of the item, as above.
 
@@ -68,83 +68,83 @@ class aJsonClass {
 	 ******************************************************************************/
 public:
 	// Supply a block of JSON, and this returns a cJSON object you can interrogate. Call cJSON_Delete when finished.
-	aJson_Object* parse(const char *value);
-	// Render a aJson_Object entity to text for transfer/storage. Free the char* when finished.
-	char* print(aJson_Object *item);
-	// Render a aJson_Object entity to text for transfer/storage without any formatting. Free the char* when finished.
-	char* printUnformatted(aJson_Object *item);
-	// Delete a aJson_Object entity and all sub-entities.
-	void deleteItem(aJson_Object *c);
+	aJsonObject* parse(const char *value);
+	// Render a aJsonObject entity to text for transfer/storage. Free the char* when finished.
+	char* print(aJsonObject *item);
+	// Render a aJsonObject entity to text for transfer/storage without any formatting. Free the char* when finished.
+	char* printUnformatted(aJsonObject *item);
+	// Delete a aJsonObject entity and all sub-entities.
+	void deleteItem(aJsonObject *c);
 
 	// Returns the number of items in an array (or object).
-	unsigned char getArraySize(aJson_Object *array);
+	unsigned char getArraySize(aJsonObject *array);
 	// Retrieve item number "item" from array "array". Returns NULL if unsuccessful.
-	aJson_Object* getArrayItem(aJson_Object *array, unsigned char item);
+	aJsonObject* getArrayItem(aJsonObject *array, unsigned char item);
 	// Get item "string" from object. Case insensitive.
-	aJson_Object* getObjectItem(aJson_Object *object, const char *string);
+	aJsonObject* getObjectItem(aJsonObject *object, const char *string);
 
-	// These calls create a aJson_Object item of the appropriate type.
-	aJson_Object* createNull();
-	aJson_Object* createTrue();
-	aJson_Object* createFalse();
-	aJson_Object* createBool(char b);
-	aJson_Object* createNumber(float num);
-	aJson_Object* createString(const char *string);
-	aJson_Object* createArray();
-	aJson_Object* createObject();
+	// These calls create a aJsonObject item of the appropriate type.
+	aJsonObject* createNull();
+	aJsonObject* createTrue();
+	aJsonObject* createFalse();
+	aJsonObject* createBool(char b);
+	aJsonObject* createNumber(float num);
+	aJsonObject* createString(const char *string);
+	aJsonObject* createArray();
+	aJsonObject* createObject();
 
 	// These utilities create an Array of count items.
-	aJson_Object* createIntArray(int *numbers, unsigned char count);
-	aJson_Object* createFloatArray(float *numbers, unsigned char count);
-	aJson_Object* createDoubleArray(float *numbers, unsigned char count);
-	aJson_Object* createStringArray(const char **strings, unsigned char count);
+	aJsonObject* createIntArray(int *numbers, unsigned char count);
+	aJsonObject* createFloatArray(float *numbers, unsigned char count);
+	aJsonObject* createDoubleArray(float *numbers, unsigned char count);
+	aJsonObject* createStringArray(const char **strings, unsigned char count);
 
 	// Append item to the specified array/object.
-	void addItemToArray(aJson_Object *array, aJson_Object *item);
-	void addItemToObject(aJson_Object *object, const char *string, aJson_Object *item);
-	// Append reference to item to the specified array/object. Use this when you want to add an existing aJson_Object to a new aJson_Object, but don't want to corrupt your existing aJson_Object.
-	void addItemReferenceToArray(aJson_Object *array, aJson_Object *item);
-	void addItemReferenceToObject(aJson_Object *object, const char *string,
-			aJson_Object *item);
+	void addItemToArray(aJsonObject *array, aJsonObject *item);
+	void addItemToObject(aJsonObject *object, const char *string, aJsonObject *item);
+	// Append reference to item to the specified array/object. Use this when you want to add an existing aJsonObject to a new aJsonObject, but don't want to corrupt your existing aJsonObject.
+	void addItemReferenceToArray(aJsonObject *array, aJsonObject *item);
+	void addItemReferenceToObject(aJsonObject *object, const char *string,
+			aJsonObject *item);
 
 	// Remove/Detach items from Arrays/Objects.
-	aJson_Object* detachItemFromArray(aJson_Object *array, unsigned char which);
-	void deleteItemFromArray(aJson_Object *array, unsigned char which);
-	aJson_Object* detachItemFromObject(aJson_Object *object, const char *string);
-	void deleteItemFromObject(aJson_Object *object, const char *string);
+	aJsonObject* detachItemFromArray(aJsonObject *array, unsigned char which);
+	void deleteItemFromArray(aJsonObject *array, unsigned char which);
+	aJsonObject* detachItemFromObject(aJsonObject *object, const char *string);
+	void deleteItemFromObject(aJsonObject *object, const char *string);
 
 	// Update array items.
-	void replaceItemInArray(aJson_Object *array, unsigned char which, aJson_Object *newitem);
-	void replaceItemInObject(aJson_Object *object, const char *string, aJson_Object *newitem);
+	void replaceItemInArray(aJsonObject *array, unsigned char which, aJsonObject *newitem);
+	void replaceItemInObject(aJsonObject *object, const char *string, aJsonObject *newitem);
 
-	void addNullToObject(aJson_Object* object, const char* name);
-	void addTrueToObject(aJson_Object* object,const char* name);
-	void addFalseToObject(aJson_Object* object,const char* name);
-	void addNumberToObject(aJson_Object* object,const char* name, int n);
-	void addStringToObject(aJson_Object* object,const char* name, const char* s);
+	void addNullToObject(aJsonObject* object, const char* name);
+	void addTrueToObject(aJsonObject* object,const char* name);
+	void addFalseToObject(aJsonObject* object,const char* name);
+	void addNumberToObject(aJsonObject* object,const char* name, int n);
+	void addStringToObject(aJsonObject* object,const char* name, const char* s);
 
 private:
-	aJson_Object* newItem();
-	const char* parseNumber(aJson_Object *item, const char *num);
-	char* printNumber(aJson_Object *item);
+	aJsonObject* newItem();
+	const char* parseNumber(aJsonObject *item, const char *num);
+	char* printNumber(aJsonObject *item);
 
-	const char* parseString(aJson_Object *item, const char *str);
+	const char* parseString(aJsonObject *item, const char *str);
 	char* printStringPtr(const char *str);
-	char* printString(aJson_Object *item);
+	char* printString(aJsonObject *item);
 
 	const char* skip(const char *in);
 
-	const char* parseValue(aJson_Object *item, const char *value);
-	char* printValue(aJson_Object *item);
+	const char* parseValue(aJsonObject *item, const char *value);
+	char* printValue(aJsonObject *item);
 
-	const char* parseArray(aJson_Object *item, const char *value);
-	char* printArray(aJson_Object *item);
+	const char* parseArray(aJsonObject *item, const char *value);
+	char* printArray(aJsonObject *item);
 
-	const char* parseObject(aJson_Object *item, const char *value);
-	char* printObject(aJson_Object *item);
-	void suffixObject(aJson_Object *prev, aJson_Object *item);
+	const char* parseObject(aJsonObject *item, const char *value);
+	char* printObject(aJsonObject *item);
+	void suffixObject(aJsonObject *prev, aJsonObject *item);
 
-	aJson_Object* createReference(aJson_Object *item);
+	aJsonObject* createReference(aJsonObject *item);
 
 };
 

@@ -48,7 +48,7 @@ void printProgStr(const prog_char* str) {
 void setup() {
 	Serial.begin(9600);
 	printProgStr( HELLO_STRING);
-	aJson_Object* root = aJson.createObject();
+	aJsonObject* root = aJson.createObject();
 	if (root != NULL) {
 		printProgStr( OBJECT_CREATE_STRING);
 	} else {
@@ -59,7 +59,7 @@ void setup() {
 	aJson.addItemToObject(root, "name", aJson.createString(
 			"Jack (\"Bee\") Nimble"));
 /*	printProgStr( CREATING_FROMAT_STRING);
-	aJson_Object* fmt = aJson.createObject();
+	aJsonObject* fmt = aJson.createObject();
 	if (fmt != NULL) {
 		printProgStr( ADDING_FORMAT_STRING);
 		aJson.addItemToObject(root, "format", fmt);
@@ -99,7 +99,7 @@ void setup() {
 		printProgStr( ERROR_PARSING_OBJECT);
 		return;
 	}
-	aJson_Object* name = aJson.getObjectItem(root, "name");
+	aJsonObject* name = aJson.getObjectItem(root, "name");
 	if (name != NULL) {
 		printProgStr( SUCCESSFULLY_RETRIEVED_NAME);
 		Serial.println(name->value.valuestring);
