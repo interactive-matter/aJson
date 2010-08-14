@@ -28,7 +28,7 @@
 /******************************************************************************
  * Definitions
  ******************************************************************************/
-// cJSON Types:
+// aJson Types:
 #define aJson_False 0
 #define aJson_True 1
 #define aJson_NULL 2
@@ -39,7 +39,7 @@
 
 #define aJson_IsReference 128
 
-// The cJSON structure:
+// The aJson structure:
 typedef struct aJsonObject {
 	struct aJsonObject *next, *prev; // next/prev allow you to walk array/object chains. Alternatively, use GetArraySize/GetArrayItem/GetObjectItem
 	struct aJsonObject *child; // An array or object item will have a child pointer pointing to a chain of the items in the array/object.
@@ -67,7 +67,7 @@ class aJsonClass {
 	 * User API
 	 ******************************************************************************/
 public:
-	// Supply a block of JSON, and this returns a cJSON object you can interrogate. Call cJSON_Delete when finished.
+	// Supply a block of JSON, and this returns a aJson object you can interrogate. Call aJson.deleteItem when finished.
 	aJsonObject* parse(const char *value);
 	// Render a aJsonObject entity to text for transfer/storage. Free the char* when finished.
 	char* print(aJsonObject *item);

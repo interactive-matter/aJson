@@ -22,8 +22,10 @@
  THE SOFTWARE.
  */
 
-// cJSON
-// JSON parser in C.
+// aJSON
+// aJson Library for Arduino.
+// This library is suited for Atmega328 based Arduinos.
+// The RAM on ATmega168 based Arduinos is too limited
 
 /******************************************************************************
  * Includes
