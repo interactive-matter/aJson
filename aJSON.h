@@ -55,7 +55,7 @@ typedef struct aJsonObject {
 		} number;
 	} value;
 
-	char *string; // The item's name string, if this item is the child of, or is in the list of subitems of an object.
+	char *name; // The item's name string, if this item is the child of, or is in the list of subitems of an object.
 } aJsonObject;
 
 class aJsonClass {

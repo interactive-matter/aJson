@@ -69,8 +69,8 @@ void aJsonClass::deleteItem(aJsonObject *c)
         deleteItem(c->child);
       if (!(c->type & aJson_IsReference) && c->value.valuestring)
         free(c->value.valuestring);
-      if (c->string)
-        free(c->string);
+      if (c->name)
+        free(c->name);
       free(c);
       c = next;
     }
@@ -531,7 +531,7 @@ const char* aJsonClass::parseObject(aJsonObject *item, const char *value)
   value = skip(parseString(child, skip(value)));
   if (!value)
     return NULL;
-  child->string = child->value.valuestring;
+  child->name = child->value.valuestring;
   child->value.valuestring = NULL;
   if (*value != ':')
     return NULL; // fail!
@@ -550,7 +550,7 @@ const char* aJsonClass::parseObject(aJsonObject *item, const char *value)
       value = skip(parseString(child, skip(value + 1)));
       if (!value)
         return NULL;
-      child->string = child->value.valuestring;
+      child->name = child->value.valuestring;
       child->value.valuestring = NULL;
       if (*value != ':')
         return NULL; // fail!
@@ -593,7 +593,7 @@ char* aJsonClass::printObject(aJsonObject *item)
   child = item->child;
   while (child)
     {
-      names[i] = str = printStringPtr(child->string);
+      names[i] = str = printStringPtr(child->name);
       entries[i++] = ret = printValue(child);
       if (str && ret)
         len += strlen(ret) + strlen(str) + 2;
@@ -667,7 +667,7 @@ aJsonObject* aJsonClass::getArrayItem(aJsonObject *array, unsigned char item)
 aJsonObject* aJsonClass::getObjectItem(aJsonObject *object, const char *string)
 {
   aJsonObject *c = object->child;
-  while (c && strcmp(c->string, string))
+  while (c && strcmp(c->name, string))
     c = c->next;
   return c;
 }
@@ -685,7 +685,7 @@ aJsonObject* aJsonClass::createReference(aJsonObject *item)
   if (!ref)
     return 0;
   memcpy(ref, item, sizeof(aJsonObject));
-  ref->string = 0;
+  ref->name = 0;
   ref->type |= aJson_IsReference;
   ref->next = ref->prev = 0;
   return ref;
@@ -712,9 +712,9 @@ void aJsonClass::addItemToObject(aJsonObject *object, const char *string, aJsonO
 {
   if (!item)
     return;
-  if (item->string)
-    free(item->string);
-  item->string = strdup(string);
+  if (item->name)
+    free(item->name);
+  item->name = strdup(string);
   addItemToArray(object, item);
 }
 void aJsonClass::addItemReferenceToArray(aJsonObject *array, aJsonObject *item)
@@ -750,7 +750,7 @@ aJsonObject* aJsonClass::detachItemFromObject(aJsonObject *object, const char *s
 {
   unsigned char i = 0;
   aJsonObject *c = object->child;
-  while (c && strcmp(c->string, string))
+  while (c && strcmp(c->name, string))
     i++, c = c->next;
   if (c)
     return detachItemFromArray(object, i);
@@ -784,11 +784,11 @@ void aJsonClass::replaceItemInObject(aJsonObject *object, const char *string, aJ
 {
   unsigned char i = 0;
   aJsonObject *c = object->child;
-  while (c && strcmp(c->string, string))
+  while (c && strcmp(c->name, string))
     i++, c = c->next;
   if (c)
     {
-      newitem->string = strdup(string);
+      newitem->name = strdup(string);
       replaceItemInArray(object, i, newitem);
     }
 }
