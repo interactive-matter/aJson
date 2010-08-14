@@ -1,6 +1,5 @@
 #include <WProgram.h>
 #include "aJSON.h"
-#include <avr/pgmspace.h>
 
 //somehow this is needed to use Serial
 extern "C" void __cxa_pure_virtual() {
