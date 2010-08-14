@@ -1,7 +1,8 @@
-/*
- Copyright (c) 2001, Interactive Matter, Marcus Nowotny
+  aJson v0.1
 
- Based on the cJSON Library, Copyright (C) 2009 Dave Gamble
+  Copyright (c) 2001, Interactive Matter, Marcus Nowotny
+
+  Based on the cJSON Library, Copyright (C) 2009 Dave Gamble
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +21,34 @@
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
-*/
 
-Welcome to aJson.
+1 Welcome to aJson.
 
 aJson is the attempt to port a complete JSON implementation to Arduino. It is based on 
 the cJSON implementation, reduced in size and removing one or two features:
-- Arrays are max 255 elements big
+- The code has very limited support on ATmega168 - there is just not enough memory and 
+  memory fragmentation is a serious problem
+- Arrays and Lists are max 255 elements big
 - There is no proper Unicode handling in this code
+- Name matching works case sensitive
+
+Most of the limitation will be gone in one of the future releases.
 
 JSON is described best here: http://www.json.org/
 It's like XML, but fat-free. You use it to move data around, store things, or just
 generally represent your program's state.
+JSON is especially useful to exchange data efficiently with e.g. JavaScript, Java, C++,
+Processing or anything else
 
-Here follows the description of cJSON:
+aJson is a library to receive, understand, create or modify JSON strings directly in the 
+Arduino. JSON is quite a standard, so that is perfect for exchanging data with other 
+applications. I combination with HTTP it is suitable to implement REST Web Services.
 
-As a library, cJSON exists to take away as much legwork as it can, but not get in your way.
-As a point of pragmatism (i.e. ignoring the truth), I'm going to say that you can use it
-in one of two modes: Auto and Manual. Let's have a quick run-through.
+aJson provides functions to parse JSON strings to object models. Handle, search and
+create and modify JSON Object structures.
 
+This is some JSON from this page: http://www.json.org/fatfree.html
 
-I lifted some JSON from this page: http://www.json.org/fatfree.html
-That page inspired me to write cJSON, which is a parser that tries to share the same
-philosophy as JSON itself. Simple, dumb, out of the way.
-
-Some JSON:
 {
     "name": "Jack (\"Bee\") Nimble", 
     "format": {
@@ -56,47 +60,59 @@ Some JSON:
     }
 }
 
-Assume that you got this from a file, a webserver, or magic JSON elves, whatever,
-you have a char * to it. Everything is a cJSON struct.
-Get it parsed:
-	cJSON *root = cJSON_Parse(my_json_string);
+To parse such a structure with aJson you simply convert it to a object tree:
+
+ aJsonObject* jsonObject = aJson.parse(json_string);
+(assuming you got the JSON string in the variable json_string - as a char*)
 
 This is an object. We're in C. We don't have objects. But we do have structs.
-What's the framerate?
+Therefor the objects are translated into structs, with all the drawbacks it brings.s
 
-	cJSON *format = cJSON_GetObjectItem(root,"format");
-	int framerate = cJSON_GetObjectItem(format,"frame rate")->valueint;
+Now we can e.g. retrieve the value for name:
 
+ aJsonObject* name = aJson.getObjectItem(root, "name");
 
-Want to change the framerate?
-	cJSON_GetObjectItem(format,"frame rate")->valueint=25;
+The value of name can be retrieved via:
+
+ Serial.println(name->value.valuestring);
+
+Note that the aJsonObject has a union 'value' which holds all possible value types as
+ovlerlays - you can get only useful data for the type which you have at hand. You can get
+the type as
+
+ name->type
+
+which can be either aJson_False, aJson_True, aJson_NULL, aJson_Number, aJson_String, aJson_Array
+or aJson_Object. For aJson_Number you can use value.number.valueint or value.number.valuedouble, for aJson_String 
+you can use value.valuestring, for True or False, you can use value.valuebool.
+
+If you want to change the name, you can do so by
+
+ aJson.getObjectItem(jsonObject,"name")->valuestring="a new name";
 	
-Back to disk?
-	char *rendered=cJSON_Print(root);
+To render the object back to a string you can simply call
+
+ char *json_String=aJson.print(jsonObject);
 
 Finished? Delete the root (this takes care of everything else).
-	cJSON_Delete(root);
 
-That's AUTO mode. If you're going to use Auto mode, you really ought to check pointers
-before you dereference them. If you want to see how you'd build this struct in code?
-	cJSON *root,*fmt;
-	root=cJSON_CreateObject();	
-	cJSON_AddItemToObject(root, "name", cJSON_CreateString("Jack (\"Bee\") Nimble"));
-	cJSON_AddItemToObject(root, "format", fmt=cJSON_CreateObject());
-	cJSON_AddStringToObject(fmt,"type",		"rect");
-	cJSON_AddNumberToObject(fmt,"width",		1920);
-	cJSON_AddNumberToObject(fmt,"height",		1080);
-	cJSON_AddFalseToObject (fmt,"interlace");
-	cJSON_AddNumberToObject(fmt,"frame rate",	24);
+ aJson.delete(root);
 
-Hopefully we can agree that's not a lot of code? There's no overhead, no unnecessary setup.
-Look at test.c for a bunch of nice examples, mostly all ripped off the json.org site, and
-a few from elsewhere.
+This deletes the objects and all values referenced by it. So take care for your string, you 
+directly assigned. They are deleted too.  
 
-What about manual mode? First up you need some detail.
-Let's cover how the cJSON objects represent the JSON data.
-cJSON doesn't distinguish arrays from objects in handling; just type.
-Each cJSON has, potentially, a child, siblings, value, a name.
+If you want to see how you'd build this struct in code?
+
+	aJsonObject *root,*fmt;
+	root=aJson.createObject();	
+	aJson.addItemToObject(root, "name", aJson.createString("Jack (\"Bee\") Nimble"));
+	aJson.addItemToObject(root, "format", fmt = aJson.createObject());
+	aJson.addStringToObject(fmt,"type",		"rect");
+	aJson.addNumberToObject(fmt,"width",		1920);
+	aJson.addNumberToObject(fmt,"height",		1080);
+	aJson.addFalseToObject (fmt,"interlace");
+	aJson.addNumberToObject(fmt,"frame rate",	24);
+
 
 The root object has: Object Type and a Child
 The Child has name "name", with value "Jack ("Bee") Nimble", and a sibling:
@@ -107,138 +123,83 @@ Sibling has type Number, name "height", value 1080, and a sibling:
 Sibling hs type False, name "interlace", and a sibling:
 Sibling has type Number, name "frame rate", value 24
 
-Here's the structure:
-typedef struct cJSON {
-	struct cJSON *next,*prev;
-	struct cJSON *child;
 
-	int type;
+The whole library (nicely provided by cJSON) is optimized for easy usage. You can create and modify
+the object as easy as possible.
 
-	char *valuestring;
-	int valueint;
-	double valuedouble;
+2. aJson Data Structures
 
-	char *string;
-} cJSON;
+aJson stores JSON objects in struct objects: 
+
+typedef struct aJsonObject {
+	struct aJsonObject *next, *prev;
+	struct aJsonObject *child;
+
+	char type; 
+
+	union {
+		char *valuestring; 
+		char valuebool; 
+		struct {
+			int valueint; 
+			float valuefloat; 
+		} number;
+	} value;
+
+	char *name; // The item's name string, if this item is the child of, or is in the list of subitems of an object.
+} aJsonObject;
+
+PLEASE NOTE THAT ESPECIALLY THIS DATA STRUCTURE WILL BE SUBJECT TO MASSIVE CHANGES IN THE NEXT VERIONS - TO SAVE MORE MEMORY
 
 By default all values are 0 unless set by virtue of being meaningful.
+
+Note that the aJsonObject has a union 'value' which holds all possible value types as
+overlays - you can get only useful data for the type which you have at hand. You can get
+the type as
+
+ name->type
+
+which can be either aJson_False, aJson_True, aJson_NULL, aJson_Number, aJson_String, aJson_Array
+or aJson_Object. For aJson_Number you can use value.number.valueint or value.number.valuedouble. 
+If you're expecting an int, read valueint, if not read valuedouble. For aJson_String 
+you can use value.valuestring, for True or False, you can use value.valuebool. 
 
 next/prev is a doubly linked list of siblings. next takes you to your sibling,
 prev takes you back from your sibling to you.
 Only objects and arrays have a "child", and it's the head of the doubly linked list.
 A "child" entry will have prev==0, but next potentially points on. The last sibling has next=0.
 The type expresses Null/True/False/Number/String/Array/Object, all of which are #defined in
-cJSON.h
-
-A Number has valueint and valuedouble. If you're expecting an int, read valueint, if not read
-valuedouble.
+aJson.h
 
 Any entry which is in the linked list which is the child of an object will have a "string"
 which is the "name" of the entry. When I said "name" in the above example, that's "string".
 "string" is the JSON name for the 'variable name' if you will.
 
 Now you can trivially walk the lists, recursively, and parse as you please.
-You can invoke cJSON_Parse to get cJSON to parse for you, and then you can take
+You can invoke aJson.parse to get aJson to parse for you, and then you can take
 the root object, and traverse the structure (which is, formally, an N-tree),
-and tokenise as you please. If you wanted to build a callback style parser, this is how
-you'd do it (just an example, since these things are very specific):
+and tokenise as you please. 
 
-void parse_and_callback(cJSON *item,const char *prefix)
-{
-	while (item)
-	{
-		char *newprefix=malloc(strlen(prefix)+strlen(item->name)+2);
-		sprintf(newprefix,"%s/%s",prefix,item->name);
-		int dorecurse=callback(newprefix, item->type, item);
-		if (item->child && dorecurse) parse_and_callback(item->child,newprefix);
-		item=item->next;
-		free(newprefix);
-	}
-}
+3 Lists in aJson
 
-The prefix process will build you a separated list, to simplify your callback handling.
-The 'dorecurse' flag would let the callback decide to handle sub-arrays on it's own, or
-let you invoke it per-item. For the item above, your callback might look like this:
+Lists are easily handled in aJson, to create a list you can simply use the provided API functions:
 
-int callback(const char *name,int type,cJSON *item)
-{
-	if (!strcmp(name,"name"))	{ /* populate name */ }
-	else if (!strcmp(name,"format/type")	{ /* handle "rect" */ }
-	else if (!strcmp(name,"format/width")	{ /* 800 */ }
-	else if (!strcmp(name,"format/height")	{ /* 600 */ }
-	else if (!strcmp(name,"format/interlace")	{ /* false */ }
-	else if (!strcmp(name,"format/frame rate")	{ /* 24 */ }
-	return 1;
-}
+ aJson.create_array_of_anything(objects,24);
 
-Alternatively, you might like to parse iteratively.
-You'd use:
+You simply pass a array of the respective type: char*[], int[] and so on.
 
-void parse_object(cJSON *item)
-{
-	int i; for (i=0;i<cJSON_GetArraySize(item);i++)
-	{
-		cJSON *subitem=cJSON_GetArrayItem(item,i);
-		// handle subitem.	
-	}
-}
-
-Or, for PROPER manual mode:
-
-void parse_object(cJSON *item)
-{
-	cJSON *subitem=item->child;
-	while (subitem)
-	{
-		// handle subitem
-		if (subitem->child) parse_object(subitem->child);
-		
-		subitem=subitem->next;
-	}
-}
-
-Of course, this should look familiar, since this is just a stripped-down version
-of the callback-parser.
-
-This should cover most uses you'll find for parsing. The rest should be possible
-to infer.. and if in doubt, read the source! There's not a lot of it! ;)
-
-
-In terms of constructing JSON data, the example code above is the right way to do it.
-You can, of course, hand your sub-objects to other functions to populate.
-Also, if you find a use for it, you can manually build the objects.
-For instance, suppose you wanted to build an array of objects?
-
-cJSON *objects[24];
-
-cJSON *Create_array_of_anything(cJSON **items,int num)
-{
-	int i;cJSON *prev, *root=cJSON_CreateArray();
-	for (i=0;i<24;i++)
-	{
-		if (!i)	root->child=objects[i];
-		else	prev->next=objects[i], objects[i]->prev=prev;
-		prev=objects[i];
-	}
-	return root;
-}
-	
-and simply: Create_array_of_anything(objects,24);
-
-cJSON doesn't make any assumptions about what order you create things in.
+aJSON doesn't make any assumptions about what order you create things in.
 You can attach the objects, as above, and later add children to each
-of those objects.
+of those objects with
+ 
+ aJson.addItemToArray()
 
-As soon as you call cJSON_Print, it renders the structure to text.
+or remove them with 
 
+ aJson.deleteItemFromArray() - which also deletes the objects, or
+ aJson.detachItemFromArray() - which does not free the memory
 
-
-The test.c code shows how to handle a bunch of typical cases. If you uncomment
-the code, it'll load, parse and print a bunch of test files, also from json.org,
-which are more complex than I'd care to try and stash into a const char array[].
-
-
-Enjoy cJSON!
+As soon as you call aJson.print(), it renders the structure to text.
 
 
-- Dave Gamble, Aug 2009
+Have Fun!
