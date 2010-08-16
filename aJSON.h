@@ -86,10 +86,10 @@ public:
 	aJsonObject* createNull();
 	aJsonObject* createTrue();
 	aJsonObject* createFalse();
-	aJsonObject* createBool(char b);
-	aJsonObject* createInt(int num);
-	aJsonObject* createFloat(float num);
-	aJsonObject* createString(const char *string);
+	aJsonObject* createItem(char b);
+	aJsonObject* createItem(int num);
+	aJsonObject* createItem(float num);
+	aJsonObject* createItem(const char *string);
 	aJsonObject* createArray();
 	aJsonObject* createObject();
 

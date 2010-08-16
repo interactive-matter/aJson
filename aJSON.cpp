@@ -774,7 +774,7 @@ aJsonObject* aJsonClass::createFalse() {
 	}
 	return item;
 }
-aJsonObject* aJsonClass::createBool(char b) {
+aJsonObject* aJsonClass::createItem(char b) {
 	aJsonObject *item = newItem();
 	if (item) {
 		item->type = b ? aJson_True : aJson_False;
@@ -783,7 +783,7 @@ aJsonObject* aJsonClass::createBool(char b) {
 	return item;
 }
 
-aJsonObject* aJsonClass::createInt(int num) {
+aJsonObject* aJsonClass::createItem(int num) {
 	aJsonObject *item = newItem();
 	if (item) {
 		item->type = aJson_Int;
@@ -792,7 +792,7 @@ aJsonObject* aJsonClass::createInt(int num) {
 	return item;
 }
 
-aJsonObject* aJsonClass::createFloat(float num) {
+aJsonObject* aJsonClass::createItem(float num) {
 	aJsonObject *item = newItem();
 	if (item) {
 		item->type = aJson_Float;
@@ -801,7 +801,7 @@ aJsonObject* aJsonClass::createFloat(float num) {
 	return item;
 }
 
-aJsonObject* aJsonClass::createString(const char *string) {
+aJsonObject* aJsonClass::createItem(const char *string) {
 	aJsonObject *item = newItem();
 	if (item) {
 		item->type = aJson_String;
@@ -828,7 +828,7 @@ aJsonObject* aJsonClass::createIntArray(int *numbers, unsigned char count) {
 	unsigned char i;
 	aJsonObject *n = 0, *p = 0, *a = createArray();
 	for (i = 0; a && i < count; i++) {
-		n = createInt(numbers[i]);
+		n = createItem(numbers[i]);
 		if (!i)
 			a->child = n;
 		else
@@ -842,7 +842,7 @@ aJsonObject* aJsonClass::createFloatArray(float *numbers, unsigned char count) {
 	unsigned char i;
 	aJsonObject *n = 0, *p = 0, *a = createArray();
 	for (i = 0; a && i < count; i++) {
-		n = createFloat(numbers[i]);
+		n = createItem(numbers[i]);
 		if (!i)
 			a->child = n;
 		else
@@ -856,7 +856,7 @@ aJsonObject* aJsonClass::createDoubleArray(float *numbers, unsigned char count) 
 	unsigned char i;
 	aJsonObject *n = 0, *p = 0, *a = createArray();
 	for (i = 0; a && i < count; i++) {
-		n = createInt(numbers[i]);
+		n = createItem(numbers[i]);
 		if (!i)
 			a->child = n;
 		else
@@ -871,7 +871,7 @@ aJsonObject* aJsonClass::createStringArray(const char **strings,
 	unsigned char i;
 	aJsonObject *n = 0, *p = 0, *a = createArray();
 	for (i = 0; a && i < count; i++) {
-		n = createString(strings[i]);
+		n = createItem(strings[i]);
 		if (!i)
 			a->child = n;
 		else
@@ -894,12 +894,12 @@ void aJsonClass::addFalseToObject(aJsonObject* object, const char* name) {
 }
 
 void aJsonClass::addNumberToObject(aJsonObject* object, const char* name, int n) {
-	addItemToObject(object, name, createInt(n));
+	addItemToObject(object, name, createItem(n));
 }
 
 void aJsonClass::addStringToObject(aJsonObject* object, const char* name,
 		const char* s) {
-	addItemToObject(object, name, createString(s));
+	addItemToObject(object, name, createItem(s));
 }
 
 aJsonClass aJson;
