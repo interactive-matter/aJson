@@ -51,7 +51,7 @@ void setup() {
     return;
   }
   printProgStr( ADDING_NAME_STRING);
-  aJson.addItemToObject(root, "name", aJson.createString(
+  aJson.addItemToObject(root, "name", aJson.createItem(
   "Jack (\"Bee\") Nimble"));
   /*      printProgStr( CREATING_FROMAT_STRING);
    aJsonObject* fmt = aJson.createObject();
