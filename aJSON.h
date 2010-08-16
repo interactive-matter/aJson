@@ -87,7 +87,8 @@ public:
 	aJsonObject* createTrue();
 	aJsonObject* createFalse();
 	aJsonObject* createBool(char b);
-	aJsonObject* createInt(float num);
+	aJsonObject* createInt(int num);
+	aJsonObject* createFloat(float num);
 	aJsonObject* createString(const char *string);
 	aJsonObject* createArray();
 	aJsonObject* createObject();
@@ -131,6 +132,7 @@ private:
 	aJsonObject* newItem();
 	const char* parseNumber(aJsonObject *item, const char *num);
 	char* printInt(aJsonObject *item);
+	char* printFloat(aJsonObject *item);
 
 	const char* parseString(aJsonObject *item, const char *str);
 	char* printStringPtr(const char *str);

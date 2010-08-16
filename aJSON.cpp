@@ -78,45 +78,57 @@ void aJsonClass::deleteItem(aJsonObject *c) {
 //TODO int/float switch
 // Parse the input text to generate a number, and populate the result into item.
 const char* aJsonClass::parseNumber(aJsonObject *item, const char *num) {
-	float n = 0, sign = 1, scale = 0;
-	int subscale = 0, signsubscale = 1;
+	int i = 0;
+	char sign = 1;
 
-	// TODO Could use sscanf for this?
+	// It is easier to decode ourselves than to use sscnaf, since so we can easier decide btw
+	// int & float
 	if (*num == '-')
 		sign = -1, num++; // Has sign?
 	if (*num == '0')
 		num++; // is zero
 	if (*num >= '1' && *num <= '9')
 		do
-			n = (n * 10.0) + (*num++ - '0');
+			i = (i * 10.0) + (*num++ - '0');
 		while (*num >= '0' && *num <= '9'); // Number?
-	if (*num == '.') {
-		num++;
-		do
-			n = (n * 10.0) + (*num++ - '0'), scale--;
-		while (*num >= '0' && *num <= '9');
-	} // Fractional part?
-	if (*num == 'e' || *num == 'E') // Exponent?
-	{
-		num++;
-		if (*num == '+')
+	//end of integer part
+	if (!(*num == '.' || *num == 'e' || *num == 'E')) {
+		item->value.valueint = i * (int)sign;
+		item->type = aJson_Int;
+	//ok it seems to be a float
+	} else {
+		float n = (float)i;
+		unsigned char scale = 0;
+		int subscale = 0;
+		char signsubscale = 1;
+		if (*num == '.') {
 			num++;
-		else if (*num == '-')
-			signsubscale = -1, num++; // With sign?
-		while (*num >= '0' && *num <= '9')
-			subscale = (subscale * 10) + (*num++ - '0'); // Number?
+			do
+				n = (n * 10.0) + (*num++ - '0'), scale--;
+			while (*num >= '0' && *num <= '9');
+		} // Fractional part?
+		if (*num == 'e' || *num == 'E') // Exponent?
+		{
+			num++;
+			if (*num == '+')
+				num++;
+			else if (*num == '-')
+				signsubscale = -1, num++; // With sign?
+			while (*num >= '0' && *num <= '9')
+				subscale = (subscale * 10) + (*num++ - '0'); // Number?
+		}
+
+		n = sign * n * pow(10.0, ((float)scale + (float)subscale * (float)signsubscale)); // number = +/- number.fraction * 10^+/- exponent
+
+		item->value.valuefloat = n;
+		item->type = aJson_Float;
 	}
-
-	n = sign * n * pow(10.0, (scale + subscale * signsubscale)); // number = +/- number.fraction * 10^+/- exponent
-
-	item->value.number.valuefloat = n;
-	item->value.number.valueint = (int) n;
-	item->type = aJson_Int;
 	return num;
 }
 
 // Render the number nicely from the given item into a string.
 char* aJsonClass::printInt(aJsonObject *item) {
+	char *str;
 	str = (char*) malloc(21); // 2^64+1 can be represented in 21 chars.
 	if (str)
 		sprintf_P(str, integer_format_P, item->value.valueint);
@@ -126,7 +138,7 @@ char* aJsonClass::printInt(aJsonObject *item) {
 
 char* aJsonClass::printFloat(aJsonObject *item) {
 	char *str;
-	float d = item->value.number.valuefloat;
+	float d = item->value.valuefloat;
 	str = (char*) malloc(64); // This is a nice tradeoff.
 	if (str) {
 		if (fabs(floor(d) - d) <= DBL_EPSILON)
