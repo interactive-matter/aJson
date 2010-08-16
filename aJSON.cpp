@@ -902,4 +902,6 @@ void aJsonClass::addStringToObject(aJsonObject* object, const char* name,
 	addItemToObject(object, name, createItem(s));
 }
 
+//TODO conversion routines btw. float & int types?
+
 aJsonClass aJson;
