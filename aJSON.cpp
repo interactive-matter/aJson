@@ -69,7 +69,7 @@ void aJsonClass::deleteItem(aJsonObject *c)
       next = c->next;
       if (!(c->type & aJson_IsReference) && c->child)
         deleteItem(c->child);
-      if (!(c->type & aJson_IsReference) && c->value.valuestring)
+      if ((c->type == aJson_String) && c->value.valuestring)
         free(c->value.valuestring);
       if (c->name)
         free(c->name);
