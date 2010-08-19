@@ -66,7 +66,7 @@ void aJsonClass::deleteItem(aJsonObject *c) {
 		next = c->next;
 		if (!(c->type & aJson_IsReference) && c->child)
 			deleteItem(c->child);
-		if (!(c->type & aJson_IsReference) && c->value.valuestring)
+		if ((c->type == aJson_String) && c->value.valuestring)
 			free(c->value.valuestring);
 		if (c->name)
 			free(c->name);
@@ -162,7 +162,7 @@ const char* aJsonClass::parseString(aJsonObject *item, const char *str) {
 	int len = 0;
 
 	if (*str != '\"')
-		return 0; // not a string!
+		return NULL; // not a string!
 
 	while (*ptr != '\"' && (unsigned char) *ptr > 31 && ++len)
 		if (*ptr++ == '\\')
@@ -311,11 +311,11 @@ const char* aJsonClass::skip(const char *in) {
 aJsonObject* aJsonClass::parse(const char *value) {
 	aJsonObject *c = newItem();
 	if (!c)
-		return 0; /* memory fail */
+		return NULL; /* memory fail */
 
 	if (!parseValue(c, skip(value))) {
 		deleteItem(c);
-		return 0;
+		return NULL;
 	}
 	return c;
 }
@@ -328,14 +328,14 @@ char* aJsonClass::print(aJsonObject *item) {
 // Parser core - when encountering text, process appropriately.
 const char* aJsonClass::parseValue(aJsonObject *item, const char *value) {
 	if (!value)
-		return 0; // Fail on null.
+		return NULL; // Fail on null.
 	if (!strncmp(value, "null", 4)) {
 		item->type = aJson_NULL;
 		return value + 4;
 	}
 	if (!strncmp(value, "false", 5)) {
 		item->type = aJson_False;
-		item->value.valuebool = -1;
+		item->value.valuebool = 0;
 		return value + 5;
 	}
 	if (!strncmp(value, "true", 4)) {
