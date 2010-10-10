@@ -77,51 +77,71 @@ aJsonClass::deleteItem(aJsonObject *c)
 
 //TODO int/float switch
 // Parse the input text to generate a number, and populate the result into item.
-const char*
-aJsonClass::parseNumber(aJsonObject *item, const char *num)
+int
+aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
 {
   int i = 0;
   char sign = 1;
 
+  int in = fgetc(stream);
+  if (in == EOF)
+    {
+      return EOF;
+    }
+
   // It is easier to decode ourselves than to use sscnaf, since so we can easier decide btw
   // int & float
-  if (*num == '-')
-    sign = -1, num++; // Has sign?
-  if (*num == '0')
-    num++; // is zero
-  if (*num >= '1' && *num <= '9')
+  if (in == '-')
+    {
+      //it is a negative number
+      sign = -1;
+      in = fgetc(stream);
+      if (in == EOF)
+        {
+          return EOF;
+        }
+    }
+  if (in >= '0' && in <= '9')
     do
-      i = (i * 10.0) + (*num++ - '0');
-    while (*num >= '0' && *num <= '9'); // Number?
-  //end of integer part
-  if (!(*num == '.' || *num == 'e' || *num == 'E'))
+      {
+        i = (i * 10.0) + (in - '0');
+        in = fgetc(stream);
+      }
+    while (in >= '0' && in <= '9'); // Number?
+  //end of integer part Ð or isn't it?
+  if (!(in == '.' || in == 'e' || in == 'E'))
     {
       item->value.valueint = i * (int) sign;
       item->type = aJson_Int;
-      //ok it seems to be a float
     }
+  //ok it seems to be a float
   else
     {
       float n = (float) i;
       unsigned char scale = 0;
       int subscale = 0;
       char signsubscale = 1;
-      if (*num == '.')
+      if (in == '.')
         {
-          num++;
-          do
-            n = (n * 10.0) + (*num++ - '0'), scale--;
-          while (*num >= '0' && *num <= '9');
+          in = fgetc(stream);
+          do {
+            n = (n * 10.0) + (in - '0'), scale--;
+            in = fgetc(stream);
+          } while (in >= '0' && in <= '9');
         } // Fractional part?
-      if (*num == 'e' || *num == 'E') // Exponent?
+      if (in == 'e' || in == 'E') // Exponent?
         {
-          num++;
-          if (*num == '+')
-            num++;
-          else if (*num == '-')
-            signsubscale = -1, num++; // With sign?
-          while (*num >= '0' && *num <= '9')
-            subscale = (subscale * 10) + (*num++ - '0'); // Number?
+          in = fgetc(stream);
+          if (in == '+') {
+            in = fgetc(stream);
+          } else if (in == '-'){
+            signsubscale = -1;
+            in = fgetc(stream);
+          }
+          while (in >= '0' && in <= '9') {
+            subscale = (subscale * 10) + (in - '0'); // Number?
+            in = fgetc(stream);
+          }
         }
 
       n = sign * n * pow(10.0, ((float) scale + (float) subscale
@@ -130,7 +150,7 @@ aJsonClass::parseNumber(aJsonObject *item, const char *num)
       item->value.valuefloat = n;
       item->type = aJson_Float;
     }
-  return num;
+  return 0;
 }
 
 // Render the number nicely from the given item into a string.
@@ -196,7 +216,8 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
       while (in != '\"' && in > 31)
         {
           if (in != '\\')
-            buffer = addToBuffer((char)in, buffer, &buffer_length, &buffer_bytes);
+            buffer = addToBuffer((char) in, buffer, &buffer_length,
+                &buffer_bytes);
           else
             {
               in = fgetc(stream);

@@ -137,7 +137,7 @@ public:
 
 private:
 	aJsonObject* newItem();
-	const char* parseNumber(aJsonObject *item, FILE* stream);
+	int parseNumber(aJsonObject *item, FILE* stream);
 	char* printInt(aJsonObject *item);
 	char* printFloat(aJsonObject *item);
 
