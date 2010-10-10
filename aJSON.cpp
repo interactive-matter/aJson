@@ -194,9 +194,6 @@ aJsonClass::printFloat(aJsonObject *item, FILE* stream)
 }
 
 // Parse the input text into an unescaped cstring, and populate item.
-static const unsigned char firstByteMark[7] =
-  { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
-
 int
 aJsonClass::parseString(aJsonObject *item, FILE* stream)
 {
