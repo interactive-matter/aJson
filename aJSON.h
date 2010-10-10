@@ -77,7 +77,7 @@ public:
         aJsonObject* parse(FILE* stream,char** filter_values); //Read from a file, but only return values include in the char* array filter_values
 	aJsonObject* parse(char *value); //Reads from a string
 	// Render a aJsonObject entity to text for transfer/storage. Free the char* when finished.
-	char* print(aJsonObject *item);
+	int print(aJsonObject *item, FILE* stream);
 	//Renders a aJsonObject directly to a output stream
 	char stream(aJsonObject *item, FILE* stream);
 	// Delete a aJsonObject entity and all sub-entities.
@@ -154,7 +154,7 @@ private:
 	char* printArray(aJsonObject *item);
 
 	int parseObject(aJsonObject *item, FILE* stream);
-	char* printObject(aJsonObject *item);
+	int printObject(aJsonObject *item, FILE* stream);
 	void suffixObject(aJsonObject *prev, aJsonObject *item);
 
 	aJsonObject* createReference(aJsonObject *item);

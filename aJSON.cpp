@@ -413,10 +413,10 @@ aJsonClass::parse(FILE* stream, char** filter)
 }
 
 // Render a aJsonObject item/entity/structure to text.
-char*
-aJsonClass::print(aJsonObject *item)
+int
+aJsonClass::print(aJsonObject *item, FILE* stream)
 {
-  return printValue(item);
+  return printValue(item, FLE* stream);
 }
 
 // Parser core - when encountering text, process appropriately.
@@ -764,88 +764,32 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream)
 }
 
 // Render an object to text.
-char*
-aJsonClass::printObject(aJsonObject *item)
+int
+aJsonClass::printObject(aJsonObject *item, FILE* stream)
 {
-  char **entries = 0, **names = 0;
-  char *out = 0, *ptr, *ret, *str;
-  int len = 7;
-  unsigned char i = 0;
+  if (item==NULL) {
+      //nothing to do
+      return 0;
+  }
   aJsonObject *child = item->child;
-  unsigned char numentries = 0, fail = 0;
-  // Count the number of entries.
-  while (child)
-    numentries++, child = child->next;
-  // Allocate space for the names and the objects
-  entries = (char**) malloc(numentries * sizeof(char*));
-  if (!entries)
-    return 0;
-  names = (char**) malloc(numentries * sizeof(char*));
-  if (!names)
-    {
-      free(entries);
-      return 0;
-    }
-  memset(entries, 0, sizeof(char*) * numentries);
-  memset(names, 0, sizeof(char*) * numentries);
-
-  // Collect all the results into our arrays:
-  child = item->child;
-  while (child)
-    {
-      names[i] = str = printStringPtr(child->name);
-      entries[i++] = ret = printValue(child);
-      if (str && ret)
-        len += strlen(ret) + strlen(str) + 2;
-      else
-        fail = 1;
+  if (fputc('{',stream)==EOF) {
+      return EOF;
+  }
+  while (child) {
+      if (printValue(child)==EOF) {
+          return EOF;
+      }
       child = child->next;
-    }
-
-  // Try to allocate the output string
-  if (!fail)
-    out = (char*) malloc(len);
-  if (!out)
-    fail = 1;
-
-  // Handle failure
-  if (fail)
-    {
-      for (i = 0; i < numentries; i++)
-        {
-          if (names[i])
-            free(names[i]);
-          if (entries[i])
-            free(entries[i]);
-        }
-      free(names);
-      free(entries);
-      return 0;
-    }
-
-  // Compose the output:
-  *out = '{';
-  ptr = out + 1;
-  *ptr = 0;
-  for (i = 0; i < numentries; i++)
-    {
-      strcpy(ptr, names[i]);
-      ptr += strlen(names[i]);
-      *ptr++ = ':';
-      strcpy(ptr, entries[i]);
-      ptr += strlen(entries[i]);
-      if (i != numentries - 1)
-        *ptr++ = ',';
-      *ptr = 0;
-      free(names[i]);
-      free(entries[i]);
-    }
-
-  free(names);
-  free(entries);
-  *ptr++ = '}';
-  *ptr++ = 0;
-  return out;
+      if (child) {
+          if  (fputc(',',stream)==EOF) {
+              return EOF;
+          }
+      }
+  }
+  if (fputc('}',stream)==EOF) {
+      return EOF;
+  }
+  return 0;
 }
 
 // Get Array size/item / object item.
