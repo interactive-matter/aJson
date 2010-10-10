@@ -3,3 +3,5 @@
 .settings/
 Debug/
 Release/
+/Debug
+/Release
