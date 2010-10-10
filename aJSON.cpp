@@ -35,7 +35,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <float.h>
-#include <limits.h>
 #include <ctype.h>
 #include <avr/pgmspace.h>
 #include "aJSON.h"
@@ -159,33 +158,38 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
 }
 
 // Render the number nicely from the given item into a string.
-char*
-aJsonClass::printInt(aJsonObject *item)
+int
+aJsonClass::printInt(aJsonObject *item, FILE* stream)
 {
-  char *str;
-  str = (char*) malloc(21); // 2^64+1 can be represented in 21 chars.
-  if (str)
-    sprintf_P(str, PSTR("%d"), item->value.valueint);
-
-  return str;
+  if (item != NULL)
+    {
+      return fprintf_P(stream, PSTR("%d"), item->value.valueint);
+    }
+  //printing nothing is ok
+  return 0;
 }
 
-char*
-aJsonClass::printFloat(aJsonObject *item)
+int
+aJsonClass::printFloat(aJsonObject *item, FILE* stream)
 {
-  char *str;
-  float d = item->value.valuefloat;
-  str = (char*) malloc(64); // This is a nice tradeoff.
-  if (str)
+  if (item != NULL)
     {
+      float d = item->value.valuefloat;
       if (fabs(floor(d) - d) <= DBL_EPSILON)
-        sprintf_P(str, PSTR("%.0f"), d);
+        {
+          return fprintf_P(stream, PSTR("%.0f"), d);
+        }
       else if (fabs(d) < 1.0e-6 || fabs(d) > 1.0e9)
-        sprintf_P(str, PSTR("%e"), d);
+        {
+          return fprintf_P(stream, PSTR("%e"), d);
+        }
       else
-        sprintf_P(str, PSTR("%f"), d);
+        {
+          return fprintf_P(stream, PSTR("%f"), d);
+        }
     }
-  return str;
+  //printing nothing is ok
+  return 0;
 }
 
 // Parse the input text into an unescaped cstring, and populate item.
@@ -435,7 +439,7 @@ aJsonClass::parse(FILE* stream, char** filter)
 int
 aJsonClass::print(aJsonObject* item, FILE* stream)
 {
-return printValue(item, FILE* stream);
+  return printValue(item, stream);
 }
 
 // Parser core - when encountering text, process appropriately.

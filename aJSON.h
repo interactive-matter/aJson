@@ -138,8 +138,8 @@ public:
 private:
 	aJsonObject* newItem();
 	int parseNumber(aJsonObject *item, FILE* stream);
-	char* printInt(aJsonObject *item);
-	char* printFloat(aJsonObject *item);
+	int printInt(aJsonObject *item, FILE* stream);
+	int printFloat(aJsonObject *item, FILE* stream);
 
 	int parseString(aJsonObject *item, FILE* stream);
 	int printStringPtr(const char *str, FILE* stream);
