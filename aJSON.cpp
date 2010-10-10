@@ -44,12 +44,8 @@
 /******************************************************************************
  * Definitions
  ******************************************************************************/
-
-//the string constants to remove them from memory
-const prog_char PROGMEM integer_format_P[] = "%d";
-const prog_char PROGMEM double_null_format_P[] = "%.0f";
-const prog_char PROGMEM double_e_format_P[] = "%e";
-const prog_char PROGMEM double_format_P[] = "%f";
+//Default buffer sizes - buffers get initialized and grow acc to that size
+#define BUFFER_DEFAULT_SIZE 4
 
 // Internal constructor.
 aJsonObject*
@@ -145,7 +141,7 @@ aJsonClass::printInt(aJsonObject *item)
   char *str;
   str = (char*) malloc(21); // 2^64+1 can be represented in 21 chars.
   if (str)
-    sprintf_P(str, integer_format_P, item->value.valueint);
+    sprintf_P(str, PSTR("%d"), item->value.valueint);
 
   return str;
 }
@@ -159,11 +155,11 @@ aJsonClass::printFloat(aJsonObject *item)
   if (str)
     {
       if (fabs(floor(d) - d) <= DBL_EPSILON)
-        sprintf_P(str, double_null_format_P, d);
+        sprintf_P(str, PSTR("%.0f"), d);
       else if (fabs(d) < 1.0e-6 || fabs(d) > 1.0e9)
-        sprintf_P(str, double_e_format_P, d);
+        sprintf_P(str, PSTR("%e"), d);
       else
-        sprintf_P(str, double_format_P, d);
+        sprintf_P(str, PSTR("%f"), d);
     }
   return str;
 }
@@ -182,7 +178,7 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
       return EOF; // not a string!
     }
   //allocate a buffer & track how long it is and how much we have read
-  char* buffer = malloc(BUFFER_SIZE * sizeof(char));
+  char* buffer = malloc(BUFFER_DEFAULT_SIZE * sizeof(char));
   if (buffer == NULL)
     {
       //unable to allocate the string
