@@ -142,8 +142,8 @@ private:
 	char* printFloat(aJsonObject *item);
 
 	int parseString(aJsonObject *item, FILE* stream);
-	char* printStringPtr(const char *str);
-	char* printString(aJsonObject *item);
+	int printStringPtr(const char *str, FILE* stream);
+	int printString(aJsonObject *item, FILE* stream);
 
 	int skip(FILE* stream);
 

@@ -283,76 +283,95 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
 }
 
 // Render the cstring provided to an escaped version that can be printed.
-char*
-aJsonClass::printStringPtr(const char *str)
+int
+aJsonClass::printStringPtr(const char *str, FILE* stream)
 {
-  const char *ptr;
-  char *ptr2, *out;
-  int len = 0;
-
-  if (!str)
-    return strdup("");
-  ptr = str;
-  while (*ptr && ++len)
+  if (fputc('\"', stream) == EOF)
     {
-      if ((unsigned char) *ptr < 32 || *ptr == '\"' || *ptr == '\\')
-        len++;
-      ptr++;
+      return EOF;
     }
-
-  out = (char*) malloc(len + 3);
-  if (!out)
-    return 0;
-
-  ptr2 = out;
-  ptr = str;
-  *ptr2++ = '\"';
-  while (*ptr)
+  char* ptr = (char*) str;
+  if (ptr != NULL)
     {
-      if ((unsigned char) *ptr > 31 && *ptr != '\"' && *ptr != '\\')
-        *ptr2++ = *ptr++;
-      else
+      while (*ptr != 0)
         {
-          *ptr2++ = '\\';
-          switch (*ptr++)
+          if ((unsigned char) *ptr > 31 && *ptr != '\"' && *ptr != '\\')
             {
-          case '\\':
-            *ptr2++ = '\\';
-            break;
-          case '\"':
-            *ptr2++ = '\"';
-            break;
-          case '\b':
-            *ptr2++ = 'b';
-            break;
-          case '\f':
-            *ptr2++ = 'f';
-            break;
-          case '\n':
-            *ptr2++ = 'n';
-            break;
-          case '\r':
-            *ptr2++ = 'r';
-            break;
-          case '\t':
-            *ptr2++ = 't';
-            break;
-          default:
-            ptr2--;
-            break; // eviscerate with prejudice.
+              if (fputc(*ptr, stream) == EOF)
+                {
+                  return EOF;
+                }
+              ptr++;
             }
+          else
+            {
+              if (fputc('\\', stream) == EOF)
+                {
+                  return EOF;
+                }
+              switch (*ptr++)
+                {
+              case '\\':
+                if (fputc('\\', stream) == EOF)
+                  {
+                    return EOF;
+                  }
+                break;
+              case '\"':
+                if (fputc('\"', stream) == EOF)
+                  {
+                    return EOF;
+                  }
+                break;
+              case '\b':
+                if (fputc('b', stream) == EOF)
+                  {
+                    return EOF;
+                  }
+                break;
+              case '\f':
+                if (fputc('f', stream) == EOF)
+                  {
+                    return EOF;
+                  }
+                break;
+              case '\n':
+                if (fputc('n', stream) == EOF)
+                  {
+                    return EOF;
+                  }
+                break;
+              case '\r':
+                if (fputc('r', stream) == EOF)
+                  {
+                    return EOF;
+                  }
+                break;
+              case '\t':
+                if (fputc('t', stream) == EOF)
+                  {
+                    return EOF;
+                  }
+                break;
+              default:
+                break; // eviscerate with prejudice.
+                }
+            }
+
         }
     }
-  *ptr2++ = '\"';
-  *ptr2++ = 0;
-  return out;
+  if (fputc('\"', stream) == EOF)
+    {
+      return EOF;
+    }
+  return 0;
 }
 
 // Invote print_string_ptr (which is useful) on an item.
-char*
-aJsonClass::printString(aJsonObject *item)
+int
+aJsonClass::printString(aJsonObject *item, FILE* stream)
 {
-  return printStringPtr(item->value.valuestring);
+  return printStringPtr(item->value.valuestring, stream);
 }
 
 // Utility to jump whitespace and cr/lf
@@ -416,7 +435,7 @@ aJsonClass::parse(FILE* stream, char** filter)
 int
 aJsonClass::print(aJsonObject* item, FILE* stream)
 {
-  return printValue(item, FILE* stream);
+return printValue(item, FILE* stream);
 }
 
 // Parser core - when encountering text, process appropriately.
@@ -626,7 +645,7 @@ aJsonClass::printArray(aJsonObject *item, FILE* stream)
     }
   while (child)
     {
-      if (printValue(child,stream) == EOF)
+      if (printValue(child, stream) == EOF)
         {
           return EOF;
         }
@@ -749,13 +768,15 @@ aJsonClass::printObject(aJsonObject *item, FILE* stream)
     }
   while (child)
     {
-      if (printString(child->name,stream)==EOF) {
+      if (printStringPtr(child->name, stream) == EOF)
+        {
           return EOF;
-      }
-      if (fputc(':',stream)==EOF) {
+        }
+      if (fputc(':', stream) == EOF)
+        {
           return EOF;
-      }
-      if (printValue(child,stream) == EOF)
+        }
+      if (printValue(child, stream) == EOF)
         {
           return EOF;
         }
