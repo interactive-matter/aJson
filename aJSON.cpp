@@ -178,7 +178,7 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
       return EOF; // not a string!
     }
   //allocate a buffer & track how long it is and how much we have read
-  char* buffer = malloc(BUFFER_DEFAULT_SIZE * sizeof(char));
+  char* buffer = (char*) malloc(BUFFER_DEFAULT_SIZE * sizeof(char));
   if (buffer == NULL)
     {
       //unable to allocate the string
@@ -190,7 +190,7 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
       free(buffer);
       return EOF;
     }
-  unsigned int buffer_length = BUFFER_SIZE;
+  unsigned int buffer_length = BUFFER_DEFAULT_SIZE;
   unsigned int buffer_bytes = 0;
   while (in != EOF)
     {
@@ -1132,17 +1132,17 @@ aJsonClass::addStringToObject(aJsonObject* object, const char* name,
 }
 
 char*
-aJsonClass::adToBuffer(char value, char* buffer, int* buffer_length,
-    int* buffer_bytes)
+aJsonClass::adToBuffer(char value, char* buffer, unsigned int* buffer_length,
+    unsigned int* buffer_bytes)
 {
   if ((buffer_bytes + 1) >= buffer_length)
     {
-      buffer = realloc(buffer_length + BUFFER_DEFAULT_LENGTH);
+      buffer = (char*) realloc(buffer_length + BUFFER_DEFAULT_SIZE);
       if (buffer == NULL)
         {
           return NULL;
         }
-      *buffer_length += BUFFER_DEFAULT_LENGTH;
+      *buffer_length += BUFFER_DEFAULT_SIZE;
       buffer[*buffer_bytes] = value;
       *buffer_bytes += 1;
       return buffer;
