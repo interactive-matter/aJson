@@ -75,7 +75,6 @@ aJsonClass::deleteItem(aJsonObject *c)
     }
 }
 
-//TODO int/float switch
 // Parse the input text to generate a number, and populate the result into item.
 int
 aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
@@ -547,40 +546,51 @@ aJsonClass::printValue(aJsonObject *item)
 }
 
 // Build an array from input text.
-const char*
-aJsonClass::parseArray(aJsonObject *item, const char *value)
+int
+aJsonClass::parseArray(aJsonObject *item, FILE* stream)
 {
   aJsonObject *child;
-  if (*value != '[')
-    return 0; // not an array!
+  int in = fgetc(stream);
+  if (in != '[') {
+    return EOF; // not an array!
+  }
 
   item->type = aJson_Array;
-  value = skip(value + 1);
-  if (*value == ']')
-    return value + 1; // empty array.
-
+  skip(stream);
+  in = fgetc(stream);
+  if (in == ']') {
+    return 0; // empty array.
+  }
+  //now put back the last character
+  if (ungetc(in,stream)==EOF) {
+      return EOF;
+  }
   item->child = child = newItem();
-  if (!item->child)
-    return 0; // memory fail
-  value = skip(parseValue(child, skip(value))); // skip any spacing, get the value.
-  if (!value)
-    return 0;
-
-  while (*value == ',')
+  if (item->child==NULL) {
+    return EOF; // memory fail
+  }
+  skip(stream);
+  if (parseValue(child,stream)) {
+      return EOF;
+  }
+  skip(stream);
+  in = fgetc(stream);
+  while (in == ',')
     {
-      aJsonObject *new_item;
-      if (!(new_item = newItem()))
-        return 0; // memory fail
+      aJsonObject *new_item = newItem();
+      if (new_item==NULL) {
+        return EOF; // memory fail
+      }
       child->next = new_item;
       new_item->prev = child;
       child = new_item;
-      value = skip(parseValue(child, skip(value + 1)));
-      if (!value)
-        return 0; // memory fail
+      skip(stream);
+      if (parseValue(child,stream)) {
+          return EOF;
+      }
+      skip(stream);
+      in = fgetc(stream);
     }
-
-  if (*value == ']')
-    return value + 1; // end of array
   return 0; // malformed.
 }
 
