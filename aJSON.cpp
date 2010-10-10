@@ -37,7 +37,6 @@
 #include <float.h>
 #include <limits.h>
 #include <ctype.h>
-#include <stdio.h>
 #include <avr/pgmspace.h>
 #include "aJSON.h"
 
@@ -378,7 +377,7 @@ aJsonClass::parse(FILE* stream, char** filter)
   if (!c)
     return NULL; /* memory fail */
 
-  skip(stream)
+  skip(stream);
   if (!parseValue(c, stream))
     {
       deleteItem(c);
@@ -413,7 +412,7 @@ aJsonClass::parseValue(aJsonObject *item, FILE* stream)
     {
       return EOF;
     }
-  if (fungetc(in, stream) == EOF)
+  if (ungetc(in, stream) == EOF)
     {
       return EOF;
     }
