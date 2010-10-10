@@ -159,7 +159,7 @@ private:
 
 	aJsonObject* createReference(aJsonObject *item);
 
-	char* adToBuffer(char value, char* buffer, unsigned int* buffer_length, unsigned int* buffer_bytes);
+	char* addToBuffer(char value, char* buffer, unsigned int* buffer_length, unsigned int* buffer_bytes);
 
 };
 

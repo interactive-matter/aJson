@@ -197,7 +197,7 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
       while (in != '\"' && in > 31)
         {
           if (in != '\\')
-            buffer = addToBuffer(in, buffer, &buffer_length, &buffer_bytes);
+            buffer = addToBuffer((char)in, buffer, &buffer_length, &buffer_bytes);
           else
             {
               in = fgetc(stream);
@@ -248,7 +248,7 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
           return EOF;
         }
       //trim the buffer
-      buffer = realloc(buffer, buffer_bytes);
+      buffer = (char*) realloc(buffer, buffer_bytes);
       item->value.valuestring = buffer;
       item->type = aJson_String;
       return 0;
@@ -1132,7 +1132,7 @@ aJsonClass::addStringToObject(aJsonObject* object, const char* name,
 }
 
 char*
-aJsonClass::adToBuffer(char value, char* buffer, unsigned int* buffer_length,
+aJsonClass::addToBuffer(char value, char* buffer, unsigned int* buffer_length,
     unsigned int* buffer_bytes)
 {
   if ((buffer_bytes + 1) >= buffer_length)
