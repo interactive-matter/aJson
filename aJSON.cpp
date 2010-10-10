@@ -749,6 +749,12 @@ aJsonClass::printObject(aJsonObject *item, FILE* stream)
     }
   while (child)
     {
+      if (printString(child->name,stream)==EOF) {
+          return EOF;
+      }
+      if (fputc(':',stream)==EOF) {
+          return EOF;
+      }
       if (printValue(child,stream) == EOF)
         {
           return EOF;
