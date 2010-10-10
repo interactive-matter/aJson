@@ -31,6 +31,14 @@ extern "C"
 #endif
   FILE*
   openStringInputStream(char* string);
+  FILE*
+  openStringOutputStream(void);
+  char*
+  closeStringOutputStream(FILE* stream);
+  char*
+  addToBuffer(char value, char* buffer, unsigned int* buffer_length,
+      unsigned int* buffer_bytes);
+
 #ifdef __cplusplus
 }
 #endif

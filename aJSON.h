@@ -78,6 +78,7 @@ public:
 	aJsonObject* parse(char *value); //Reads from a string
 	// Render a aJsonObject entity to text for transfer/storage. Free the char* when finished.
 	int print(aJsonObject *item, FILE* stream);
+	char* print(aJsonObject* item);
 	//Renders a aJsonObject directly to a output stream
 	char stream(aJsonObject *item, FILE* stream);
 	// Delete a aJsonObject entity and all sub-entities.

@@ -408,7 +408,7 @@ aJsonObject*
 aJsonClass::parse(char *value)
 {
   FILE* string_input_stream = openStringInputStream(value);
-  aJsonObject* result = parse(string_input_stream,NULL);
+  aJsonObject* result = parse(string_input_stream, NULL);
   fclose(string_input_stream);
   return result;
 }
@@ -417,7 +417,7 @@ aJsonClass::parse(char *value)
 aJsonObject*
 aJsonClass::parse(FILE* stream)
 {
-  return parse(stream,NULL);
+  return parse(stream, NULL);
 }
 
 // Parse an object - create a new root, and populate.
@@ -446,6 +446,18 @@ int
 aJsonClass::print(aJsonObject* item, FILE* stream)
 {
   return printValue(item, stream);
+}
+
+char*
+aJsonClass::print(aJsonObject* item)
+{
+  FILE* stream = openStringOutputStream();
+  if (stream == NULL)
+    {
+      return NULL;
+    }
+  print(item, stream);
+  return closeStringOutputStream(stream);
 }
 
 // Parser core - when encountering text, process appropriately.
@@ -1165,26 +1177,6 @@ aJsonClass::addStringToObject(aJsonObject* object, const char* name,
     const char* s)
 {
   addItemToObject(object, name, createItem(s));
-}
-
-char*
-aJsonClass::addToBuffer(char value, char* buffer, unsigned int* buffer_length,
-    unsigned int* buffer_bytes)
-{
-  if ((buffer_bytes + 1) >= buffer_length)
-    {
-      buffer = (char*) realloc((void*) buffer, (*buffer_length
-          + BUFFER_DEFAULT_SIZE) * sizeof(char));
-      if (buffer == NULL)
-        {
-          return NULL;
-        }
-      *buffer_length += BUFFER_DEFAULT_SIZE;
-      buffer[*buffer_bytes] = value;
-      *buffer_bytes += 1;
-      return buffer;
-    }
-  return buffer;
 }
 
 //TODO conversion routines btw. float & int types?
