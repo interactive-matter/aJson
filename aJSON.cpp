@@ -32,12 +32,12 @@
  ******************************************************************************/
 
 #include <string.h>
-#include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 #include <float.h>
 #include <limits.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <avr/pgmspace.h>
 #include "aJSON.h"
 
@@ -52,7 +52,9 @@ const prog_char PROGMEM double_e_format_P[] = "%e";
 const prog_char PROGMEM double_format_P[] = "%f";
 
 // Internal constructor.
-aJsonObject* aJsonClass::newItem() {
+aJsonObject*
+aJsonClass::newItem()
+{
   aJsonObject* node = (aJsonObject*) malloc(sizeof(aJsonObject));
   if (node)
     memset(node, 0, sizeof(aJsonObject));
@@ -60,7 +62,8 @@ aJsonObject* aJsonClass::newItem() {
 }
 
 // Delete a aJsonObject structure.
-void aJsonClass::deleteItem(aJsonObject *c)
+void
+aJsonClass::deleteItem(aJsonObject *c)
 {
   aJsonObject *next;
   while (c)
@@ -169,89 +172,93 @@ aJsonClass::printFloat(aJsonObject *item)
 static const unsigned char firstByteMark[7] =
   { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
 
-const char*
-aJsonClass::parseString(aJsonObject *item, const char *str)
+int
+aJsonClass::parseString(aJsonObject *item, FILE* stream)
 {
-  const char *ptr = str + 1;
-  char *ptr2;
-  char *out;
-  int len = 0;
-
-  if (*str != '\"')
-    return NULL; // not a string!
-
-  while (*ptr != '\"' && (unsigned char) *ptr > 31 && ++len)
-    if (*ptr++ == '\\')
-      ptr++; // Skip escaped quotes.
-
-  out = (char*) malloc(len + 1); // This is how long we need for the string, roughly.
-  if (!out)
-    return 0;
-
-  ptr = str + 1;
-  ptr2 = out;
-  while (*ptr != '\"' && (unsigned char) *ptr > 31)
+  //we do not need to skip here since the first byte should be '\"'
+  int in = fgetc(stream);
+  if (in != '\"')
     {
-      if (*ptr != '\\')
-        *ptr2++ = *ptr++;
-      else
-        {
-          ptr++;
-          switch (*ptr)
-            {
-          case 'b':
-            *ptr2++ = '\b';
-            break;
-          case 'f':
-            *ptr2++ = '\f';
-            break;
-          case 'n':
-            *ptr2++ = '\n';
-            break;
-          case 'r':
-            *ptr2++ = '\r';
-            break;
-          case 't':
-            *ptr2++ = '\t';
-            break;
-            //no unicode support
-            /*          case 'u': // transcode utf16 to utf8. DOES NOT SUPPORT SURROGATE PAIRS CORRECTLY.
-             sscanf(ptr + 1, "%4x", &uc); // get the unicode char.
-             len = 3;
-             if (uc < 0x80)
-             len = 1;
-             else if (uc < 0x800)
-             len = 2;
-             ptr2 += len;
-
-             switch (len)
-             {
-             case 3:
-             *--ptr2 = ((uc | 0x80) & 0xBF);
-             uc >>= 6;
-             case 2:
-             *--ptr2 = ((uc | 0x80) & 0xBF);
-             uc >>= 6;
-             case 1:
-             *--ptr2 = (uc | firstByteMark[len]);
-             }
-             ptr2 += len;
-             ptr += 4;
-             break;
-             */
-          default:
-            *ptr2++ = *ptr;
-            break;
-            }
-          ptr++;
-        }
+      return EOF; // not a string!
     }
-  *ptr2 = 0;
-  if (*ptr == '\"')
-    ptr++;
-  item->value.valuestring = out;
-  item->type = aJson_String;
-  return ptr;
+  //allocate a buffer & track how long it is and how much we have read
+  char* buffer = malloc(BUFFER_SIZE * sizeof(char));
+  if (buffer == NULL)
+    {
+      //unable to allocate the string
+      return EOF;
+    }
+  in = fgetc(stream);
+  if (in == EOF)
+    {
+      free(buffer);
+      return EOF;
+    }
+  unsigned int buffer_length = BUFFER_SIZE;
+  unsigned int buffer_bytes = 0;
+  while (in != EOF)
+    {
+      while (in != '\"' && in > 31)
+        {
+          if (in != '\\')
+            buffer = addToBuffer(in, buffer, &buffer_length, &buffer_bytes);
+          else
+            {
+              in = fgetc(stream);
+              if (in == EOF)
+                {
+                  free(buffer);
+                  return EOF;
+                }
+              switch (in)
+                {
+              case 'b':
+                buffer = addToBuffer('\b', buffer, &buffer_length,
+                    &buffer_bytes);
+                break;
+              case 'f':
+                buffer = addToBuffer('\f', buffer, &buffer_length,
+                    &buffer_bytes);
+                break;
+              case 'n':
+                buffer = addToBuffer('\n', buffer, &buffer_length,
+                    &buffer_bytes);
+                break;
+              case 'r':
+                buffer = addToBuffer('\r', buffer, &buffer_length,
+                    &buffer_bytes);
+                break;
+              case 't':
+                buffer = addToBuffer('\t', buffer, &buffer_length,
+                    &buffer_bytes);
+                break;
+              default:
+                //we do not understand it so we skip it
+                break;
+                }
+            }
+          in = fgetc(stream);
+          if (in == EOF)
+            {
+              free(buffer);
+              return EOF;
+            }
+        }
+      //the string ends here
+      buffer = addToBuffer(0, buffer, &buffer_length, &buffer_bytes);
+      if (in == EOF)
+        {
+          free(buffer);
+          return EOF;
+        }
+      //trim the buffer
+      buffer = realloc(buffer, buffer_bytes);
+      item->value.valuestring = buffer;
+      item->type = aJson_String;
+      return 0;
+    }
+  //we should not be here but it is ok
+  return 0;
 }
 
 // Render the cstring provided to an escaped version that can be printed.
@@ -328,23 +335,55 @@ aJsonClass::printString(aJsonObject *item)
 }
 
 // Utility to jump whitespace and cr/lf
-const char*
-aJsonClass::skip(const char *in)
+int
+aJsonClass::skip(FILE* stream)
 {
-  while (in && (unsigned char) *in <= 32)
-    in++;
-  return in;
+  if (stream == NULL)
+    {
+      return EOF;
+    }
+  int in = fgetc(stream);
+  while (in != EOF && (in <= 32))
+    {
+      in = fgetc(stream);
+    }
+  if (in != EOF)
+    {
+      if (ungetc(in, stream) == EOF)
+        {
+          return EOF;
+        }
+      return 0;
+    }
+  return EOF;
 }
 
 // Parse an object - create a new root, and populate.
 aJsonObject*
-aJsonClass::parse(const char *value)
+aJsonClass::parse(char *value)
 {
+}
+
+// Parse an object - create a new root, and populate.
+aJsonObject*
+aJsonClass::parse(FILE* stream)
+{
+}
+
+// Parse an object - create a new root, and populate.
+aJsonObject*
+aJsonClass::parse(FILE* stream, char** filter)
+{
+  if (stream == NULL)
+    {
+      return NULL;
+    }
   aJsonObject *c = newItem();
   if (!c)
     return NULL; /* memory fail */
 
-  if (!parseValue(c, skip(value)))
+  skip(stream)
+  if (!parseValue(c, stream))
     {
       deleteItem(c);
       return NULL;
@@ -360,46 +399,98 @@ aJsonClass::print(aJsonObject *item)
 }
 
 // Parser core - when encountering text, process appropriately.
-const char*
-aJsonClass::parseValue(aJsonObject *item, const char *value)
+int
+aJsonClass::parseValue(aJsonObject *item, FILE* stream)
 {
-  if (!value)
-    return NULL; // Fail on null.
-  if (!strncmp(value, "null", 4))
+  if (stream == NULL)
     {
-      item->type = aJson_NULL;
-      return value + 4;
+      return EOF; // Fail on null.
     }
-  if (!strncmp(value, "false", 5))
+  //TODO is it better to skip here?
+  if (skip(stream))
     {
-      item->type = aJson_False;
-      item->value.valuebool = 0;
-      return value + 5;
+      return EOF;
     }
-  if (!strncmp(value, "true", 4))
+  //read the first byte from the stream
+  int in = fgetc(stream);
+  if (in == EOF)
     {
-      item->type = aJson_True;
-      item->value.valuebool = 1;
-      return value + 4;
+      return EOF;
     }
-  if (*value == '\"')
+  if (fungetc(in, stream) == EOF)
     {
-      return parseString(item, value);
+      return EOF;
     }
-  if (*value == '-' || (*value >= '0' && *value <= '9'))
+  if (in == '\"')
     {
-      return parseNumber(item, value);
+      return parseString(item, stream);
     }
-  if (*value == '[')
+  else if (in == '-' || (in >= '0' && in <= '9'))
     {
-      return parseArray(item, value);
+      return parseNumber(item, stream);
     }
-  if (*value == '{')
+  else if (in == '[')
     {
-      return parseObject(item, value);
+      return parseArray(item, stream);
+    }
+  else if (in == '{')
+    {
+      return parseObject(item, stream);
+    }
+  //it can only be null, false or true
+  else if (in == 'n')
+    {
+      //a buffer to read the value
+      char buffer[] =
+        { 0, 0, 0, 0 };
+      if (fread(buffer, sizeof(char), 4, stream) != 4)
+        {
+          return EOF;
+        }
+      if (!strncmp(buffer, "null", 4))
+        {
+          item->type = aJson_NULL;
+          return 0;
+        }
+      else
+        {
+          return EOF;
+        }
+    }
+  else if (in == 'f')
+    {
+      //a buffer to read the value
+      char buffer[] =
+        { 0, 0, 0, 0, 0 };
+      if (fread(buffer, sizeof(char), 5, stream) != 5)
+        {
+          return EOF;
+        }
+      if (!strncmp(buffer, "false", 5))
+        {
+          item->type = aJson_False;
+          item->value.valuebool = 0;
+          return 0;
+        }
+    }
+  else if (in == 't')
+    {
+      //a buffer to read the value
+      char buffer[] =
+        { 0, 0, 0, 0 };
+      if (fread(buffer, sizeof(char), 4, stream) != 4)
+        {
+          return EOF;
+        }
+      if (!strncmp(buffer, "true", 4))
+        {
+          item->type = aJson_True;
+          item->value.valuebool = 1;
+          return 0;
+        }
     }
 
-  return 0; // failure.
+  return EOF; // failure.
 }
 
 // Render a value to text.
@@ -1042,6 +1133,24 @@ aJsonClass::addStringToObject(aJsonObject* object, const char* name,
     const char* s)
 {
   addItemToObject(object, name, createItem(s));
+}
+
+char*
+aJsonClass::adToBuffer(char value, char* buffer, int* buffer_length,
+    int* buffer_bytes)
+{
+  if ((buffer_bytes + 1) >= buffer_length)
+    {
+      buffer = realloc(buffer_length + BUFFER_DEFAULT_LENGTH);
+      if (buffer == NULL)
+        {
+          return NULL;
+        }
+      *buffer_length += BUFFER_DEFAULT_LENGTH;
+      buffer[*buffer_bytes] = value;
+      *buffer_bytes += 1;
+      return buffer;
+    }
 }
 
 //TODO conversion routines btw. float & int types?

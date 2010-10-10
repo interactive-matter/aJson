@@ -26,6 +26,12 @@
 #define aJson__h
 
 /******************************************************************************
+ * Includes
+ ******************************************************************************/
+#include <stdio.h>
+
+
+/******************************************************************************
  * Definitions
  ******************************************************************************/
 // aJson Types:
@@ -67,11 +73,13 @@ class aJsonClass {
 	 ******************************************************************************/
 public:
 	// Supply a block of JSON, and this returns a aJson object you can interrogate. Call aJson.deleteItem when finished.
-	aJsonObject* parse(const char *value);
+        aJsonObject* parse(FILE* stream); //Reads from a stream
+        aJsonObject* parse(FILE* stream,char** filter_values); //Read from a file, but only return values include in the char* array filter_values
+	aJsonObject* parse(char *value); //Reads from a string
 	// Render a aJsonObject entity to text for transfer/storage. Free the char* when finished.
 	char* print(aJsonObject *item);
-	// Render a aJsonObject entity to text for transfer/storage without any formatting. Free the char* when finished.
-	char* printUnformatted(aJsonObject *item);
+	//Renders a aJsonObject directly to a output stream
+	char stream(aJsonObject *item, FILE* stream);
 	// Delete a aJsonObject entity and all sub-entities.
 	void deleteItem(aJsonObject *c);
 
@@ -133,13 +141,13 @@ private:
 	char* printInt(aJsonObject *item);
 	char* printFloat(aJsonObject *item);
 
-	const char* parseString(aJsonObject *item, const char *str);
+	int parseString(aJsonObject *item, FILE* stream);
 	char* printStringPtr(const char *str);
 	char* printString(aJsonObject *item);
 
-	const char* skip(const char *in);
+	int skip(FILE* stream);
 
-	const char* parseValue(aJsonObject *item, const char *value);
+	int parseValue(aJsonObject *item, FILE* stream);
 	char* printValue(aJsonObject *item);
 
 	const char* parseArray(aJsonObject *item, const char *value);
@@ -150,6 +158,8 @@ private:
 	void suffixObject(aJsonObject *prev, aJsonObject *item);
 
 	aJsonObject* createReference(aJsonObject *item);
+
+	char* adToBuffer(char value, char* buffer, int* buffer_length, int* buffer_bytes);
 
 };
 
