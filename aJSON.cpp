@@ -611,72 +611,39 @@ aJsonClass::parseArray(aJsonObject *item, FILE* stream)
 }
 
 // Render an array to text
-char*
-aJsonClass::printArray(aJsonObject *item)
+int
+aJsonClass::printArray(aJsonObject *item, FILE* stream)
 {
-  char **entries;
-  char *out = 0, *ptr, *ret;
-  int len = 5;
-  aJsonObject *child = item->child;
-  unsigned char numentries = 0, i = 0, fail = 0;
-
-  // How many entries in the array?
-  while (child)
-    numentries++, child = child->next;
-  // Allocate an array to hold the values for each
-  entries = (char**) malloc(numentries * sizeof(char*));
-  if (!entries)
-    return 0;
-  memset(entries, 0, numentries * sizeof(char*));
-  // Retrieve all the results:
-  child = item->child;
-  while (child && !fail)
+  if (item == NULL)
     {
-      ret = printValue(child);
-      entries[i++] = ret;
-      if (ret)
-        len += strlen(ret) + 2;
-      else
-        fail = 1;
-      child = child->next;
-    }
-
-  // If we didn't fail, try to malloc the output string
-  if (!fail)
-    out = (char*) malloc(len);
-  // If that fails, we fail.
-  if (!out)
-    fail = 1;
-
-  // Handle failure.
-  if (fail)
-    {
-      for (i = 0; i < numentries; i++)
-        if (entries[i])
-          free(entries[i]);
-      free(entries);
+      //nothing to do
       return 0;
     }
-
-  // Compose the output array.
-  *out = '[';
-  ptr = out + 1;
-  *ptr = 0;
-  for (i = 0; i < numentries; i++)
+  aJsonObject *child = item->child;
+  if (fputc('[', stream) == EOF)
     {
-      strcpy(ptr, entries[i]);
-      ptr += strlen(entries[i]);
-      if (i != numentries - 1)
-        {
-          *ptr++ = ',';
-          *ptr = 0;
-        }
-      free(entries[i]);
+      return EOF;
     }
-  free(entries);
-  *ptr++ = ']';
-  *ptr++ = 0;
-  return out;
+  while (child)
+    {
+      if (printValue(child,stream) == EOF)
+        {
+          return EOF;
+        }
+      child = child->next;
+      if (child)
+        {
+          if (fputc(',', stream) == EOF)
+            {
+              return EOF;
+            }
+        }
+    }
+  if (fputc(']', stream) == EOF)
+    {
+      return EOF;
+    }
+  return 0;
 }
 
 // Build an object from the text.
@@ -782,7 +749,7 @@ aJsonClass::printObject(aJsonObject *item, FILE* stream)
     }
   while (child)
     {
-      if (printValue(child) == EOF)
+      if (printValue(child,stream) == EOF)
         {
           return EOF;
         }

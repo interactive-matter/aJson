@@ -151,7 +151,7 @@ private:
 	int printValue(aJsonObject *item, FILE* stream);
 
 	int parseArray(aJsonObject *item, FILE* stream);
-	char* printArray(aJsonObject *item);
+	int printArray(aJsonObject *item, FILE* stream);
 
 	int parseObject(aJsonObject *item, FILE* stream);
 	int printObject(aJsonObject *item, FILE* stream);
