@@ -38,6 +38,7 @@
 #include <ctype.h>
 #include <avr/pgmspace.h>
 #include "aJSON.h"
+#include "util/streamhelper.h"
 
 /******************************************************************************
  * Definitions
@@ -406,12 +407,17 @@ aJsonClass::skip(FILE* stream)
 aJsonObject*
 aJsonClass::parse(char *value)
 {
+  FILE* string_input_stream = openStringInputStream(value);
+  aJsonObject* result = parse(string_input_stream,NULL);
+  fclose(string_input_stream);
+  return result;
 }
 
 // Parse an object - create a new root, and populate.
 aJsonObject*
 aJsonClass::parse(FILE* stream)
 {
+  return parse(stream,NULL);
 }
 
 // Parse an object - create a new root, and populate.
