@@ -148,7 +148,7 @@ private:
 	int skip(FILE* stream);
 
 	int parseValue(aJsonObject *item, FILE* stream);
-	char* printValue(aJsonObject *item);
+	int printValue(aJsonObject *item, FILE* stream);
 
 	int parseArray(aJsonObject *item, FILE* stream);
 	char* printArray(aJsonObject *item);

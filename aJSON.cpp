@@ -414,9 +414,9 @@ aJsonClass::parse(FILE* stream, char** filter)
 
 // Render a aJsonObject item/entity/structure to text.
 int
-aJsonClass::print(aJsonObject *item, FILE* stream)
+aJsonClass::print(aJsonObject* item, FILE* stream)
 {
-  return printValue(item, FLE* stream);
+  return printValue(item, FILE* stream);
 }
 
 // Parser core - when encountering text, process appropriately.
@@ -515,40 +515,43 @@ aJsonClass::parseValue(aJsonObject *item, FILE* stream)
 }
 
 // Render a value to text.
-char*
-aJsonClass::printValue(aJsonObject *item)
+int
+aJsonClass::printValue(aJsonObject *item, FILE* stream)
 {
-  char *out = NULL;
+  int result = 0;
   if (!item)
-    return NULL;
+    {
+      //nothing to do
+      return 0;
+    }
   switch (item->type)
     {
   case aJson_NULL:
-    out = strdup("null");
+    result = fprintf_P(stream, PSTR("null"));
     break;
   case aJson_False:
-    out = strdup("false");
+    result = fprintf_P(stream, PSTR("false"));
     break;
   case aJson_True:
-    out = strdup("true");
+    result = fprintf_P(stream, PSTR("true"));
     break;
   case aJson_Int:
-    out = printInt(item);
+    result = printInt(item, stream);
     break;
   case aJson_Float:
-    out = printFloat(item);
+    result = printFloat(item, stream);
     break;
   case aJson_String:
-    out = printString(item);
+    result = printString(item, stream);
     break;
   case aJson_Array:
-    out = printArray(item);
+    result = printArray(item, stream);
     break;
   case aJson_Object:
-    out = printObject(item);
+    result = printObject(item, stream);
     break;
     }
-  return out;
+  return result;
 }
 
 // Build an array from input text.
@@ -767,28 +770,35 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream)
 int
 aJsonClass::printObject(aJsonObject *item, FILE* stream)
 {
-  if (item==NULL) {
+  if (item == NULL)
+    {
       //nothing to do
       return 0;
-  }
+    }
   aJsonObject *child = item->child;
-  if (fputc('{',stream)==EOF) {
+  if (fputc('{', stream) == EOF)
+    {
       return EOF;
-  }
-  while (child) {
-      if (printValue(child)==EOF) {
+    }
+  while (child)
+    {
+      if (printValue(child) == EOF)
+        {
           return EOF;
-      }
+        }
       child = child->next;
-      if (child) {
-          if  (fputc(',',stream)==EOF) {
+      if (child)
+        {
+          if (fputc(',', stream) == EOF)
+            {
               return EOF;
-          }
-      }
-  }
-  if (fputc('}',stream)==EOF) {
+            }
+        }
+    }
+  if (fputc('}', stream) == EOF)
+    {
       return EOF;
-  }
+    }
   return 0;
 }
 
