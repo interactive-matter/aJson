@@ -153,7 +153,7 @@ private:
 	int parseArray(aJsonObject *item, FILE* stream);
 	char* printArray(aJsonObject *item);
 
-	const char* parseObject(aJsonObject *item, const char *value);
+	int parseObject(aJsonObject *item, FILE* stream);
 	char* printObject(aJsonObject *item);
 	void suffixObject(aJsonObject *prev, aJsonObject *item);
 

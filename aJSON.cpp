@@ -123,24 +123,30 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
       if (in == '.')
         {
           in = fgetc(stream);
-          do {
-            n = (n * 10.0) + (in - '0'), scale--;
-            in = fgetc(stream);
-          } while (in >= '0' && in <= '9');
+          do
+            {
+              n = (n * 10.0) + (in - '0'), scale--;
+              in = fgetc(stream);
+            }
+          while (in >= '0' && in <= '9');
         } // Fractional part?
       if (in == 'e' || in == 'E') // Exponent?
         {
           in = fgetc(stream);
-          if (in == '+') {
-            in = fgetc(stream);
-          } else if (in == '-'){
-            signsubscale = -1;
-            in = fgetc(stream);
-          }
-          while (in >= '0' && in <= '9') {
-            subscale = (subscale * 10) + (in - '0'); // Number?
-            in = fgetc(stream);
-          }
+          if (in == '+')
+            {
+              in = fgetc(stream);
+            }
+          else if (in == '-')
+            {
+              signsubscale = -1;
+              in = fgetc(stream);
+            }
+          while (in >= '0' && in <= '9')
+            {
+              subscale = (subscale * 10) + (in - '0'); // Number?
+              in = fgetc(stream);
+            }
         }
 
       n = sign * n * pow(10.0, ((float) scale + (float) subscale
@@ -551,43 +557,50 @@ aJsonClass::parseArray(aJsonObject *item, FILE* stream)
 {
   aJsonObject *child;
   int in = fgetc(stream);
-  if (in != '[') {
-    return EOF; // not an array!
-  }
+  if (in != '[')
+    {
+      return EOF; // not an array!
+    }
 
   item->type = aJson_Array;
   skip(stream);
   in = fgetc(stream);
-  if (in == ']') {
-    return 0; // empty array.
-  }
+  if (in == ']')
+    {
+      return 0; // empty array.
+    }
   //now put back the last character
-  if (ungetc(in,stream)==EOF) {
+  if (ungetc(in, stream) == EOF)
+    {
       return EOF;
-  }
+    }
   item->child = child = newItem();
-  if (item->child==NULL) {
-    return EOF; // memory fail
-  }
+  if (item->child == NULL)
+    {
+      return EOF; // memory fail
+    }
   skip(stream);
-  if (parseValue(child,stream)) {
+  if (parseValue(child, stream))
+    {
       return EOF;
-  }
+    }
   skip(stream);
   in = fgetc(stream);
   while (in == ',')
     {
       aJsonObject *new_item = newItem();
-      if (new_item==NULL) {
-        return EOF; // memory fail
-      }
+      if (new_item == NULL)
+        {
+          return EOF; // memory fail
+        }
       child->next = new_item;
       new_item->prev = child;
       child = new_item;
       skip(stream);
-      if (parseValue(child,stream)) {
+      if (parseValue(child, stream))
+        {
           return EOF;
-      }
+        }
       skip(stream);
       in = fgetc(stream);
     }
@@ -664,55 +677,90 @@ aJsonClass::printArray(aJsonObject *item)
 }
 
 // Build an object from the text.
-const char*
-aJsonClass::parseObject(aJsonObject *item, const char *value)
+int
+aJsonClass::parseObject(aJsonObject *item, FILE* stream)
 {
-  aJsonObject *child;
-  if (*value != '{')
-    return NULL; // not an object!
+  int in = fgetc(stream);
+  if (in != '{')
+    return EOF; // not an object!
 
   item->type = aJson_Object;
-  value = skip(value + 1);
-  if (*value == '}')
-    return value + 1; // empty array.
+  skip(stream);
+  in = fgetc(stream);
+  if (in == '}')
+    {
+      return 0; // empty array.
+    }
 
-  item->child = child = newItem();
-  if (!item->child)
-    return NULL;
-  value = skip(parseString(child, skip(value)));
-  if (!value)
-    return NULL;
+  aJsonObject *child = newItem();
+  item->child = child;
+  if (item->child == NULL)
+    {
+      return EOF; //memory fail
+    }
+  skip(stream);
+  if (parseString(child, stream) == EOF)
+    {
+      return EOF;
+    }
+  skip(stream);
   child->name = child->value.valuestring;
   child->value.valuestring = NULL;
-  if (*value != ':')
-    return NULL; // fail!
-  value = skip(parseValue(child, skip(value + 1))); // skip any spacing, get the value.
-  if (!value)
-    return NULL;
-
-  while (*value == ',')
+  in = fgetc(stream);
+  if (in != ':')
     {
-      aJsonObject *new_item;
-      if (!(new_item = newItem()))
-        return NULL; // memory fail
+      return EOF; // fail!
+    }
+  // skip any spacing, get the value.
+  skip(stream);
+  if (parseValue(child, stream))
+    {
+      return EOF;
+    }
+  skip(stream);
+  in = fgetc(stream);
+  while (in == ',')
+    {
+      in = fgetc(stream);
+      aJsonObject *new_item = newItem();
+      if (new_item == NULL)
+        {
+          return EOF; // memory fail
+        }
       child->next = new_item;
       new_item->prev = child;
       child = new_item;
-      value = skip(parseString(child, skip(value + 1)));
-      if (!value)
-        return NULL;
+      skip(stream);
+      if (parseString(child, stream) == EOF)
+        {
+          return EOF;
+        }
+      skip(stream);
       child->name = child->value.valuestring;
       child->value.valuestring = NULL;
-      if (*value != ':')
-        return NULL; // fail!
-      value = skip(parseValue(child, skip(value + 1))); // skip any spacing, get the value.
-      if (!value)
-        return NULL;
+
+      in = fgetc(stream);
+      if (in != ':')
+        {
+          return EOF; // fail!
+        }
+      skip(stream);
+      if (parseValue(child, stream) == EOF)
+        ; // skip any spacing, get the value.
+        {
+          return EOF;
+        }
     }
 
-  if (*value == '}')
-    return value + 1; // end of array
-  return NULL; // malformed.
+  in = fgetc(stream);
+  if (in == '}')
+    {
+      return 0; // end of array
+    }
+  else
+    {
+      return EOF; // malformed.
+    }
 }
 
 // Render an object to text.
@@ -1167,7 +1215,8 @@ aJsonClass::addToBuffer(char value, char* buffer, unsigned int* buffer_length,
 {
   if ((buffer_bytes + 1) >= buffer_length)
     {
-      buffer = (char*) realloc(buffer_length + BUFFER_DEFAULT_SIZE);
+      buffer = (char*) realloc((void*) buffer, (*buffer_length
+          + BUFFER_DEFAULT_SIZE) * sizeof(char));
       if (buffer == NULL)
         {
           return NULL;
@@ -1177,6 +1226,7 @@ aJsonClass::addToBuffer(char value, char* buffer, unsigned int* buffer_length,
       *buffer_bytes += 1;
       return buffer;
     }
+  return buffer;
 }
 
 //TODO conversion routines btw. float & int types?
