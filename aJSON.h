@@ -148,19 +148,17 @@ private:
 
 	int skip(FILE* stream);
 
-	int parseValue(aJsonObject *item, FILE* stream);
+	int parseValue(aJsonObject *item, FILE* stream, char** filter);
 	int printValue(aJsonObject *item, FILE* stream);
 
-	int parseArray(aJsonObject *item, FILE* stream);
+	int parseArray(aJsonObject *item, FILE* stream, char** filter);
 	int printArray(aJsonObject *item, FILE* stream);
 
-	int parseObject(aJsonObject *item, FILE* stream);
+	int parseObject(aJsonObject *item, FILE* stream, char** filter);
 	int printObject(aJsonObject *item, FILE* stream);
 	void suffixObject(aJsonObject *prev, aJsonObject *item);
 
 	aJsonObject* createReference(aJsonObject *item);
-
-	char* addToBuffer(char value, char* buffer, unsigned int* buffer_length, unsigned int* buffer_bytes);
 
 };
 

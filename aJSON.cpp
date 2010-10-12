@@ -430,7 +430,7 @@ aJsonClass::parse(FILE* stream, char** filter)
     return NULL; /* memory fail */
 
   skip(stream);
-  if (!parseValue(c, stream))
+  if (!parseValue(c, stream, filter))
     {
       deleteItem(c);
       return NULL;
@@ -459,13 +459,12 @@ aJsonClass::print(aJsonObject* item)
 
 // Parser core - when encountering text, process appropriately.
 int
-aJsonClass::parseValue(aJsonObject *item, FILE* stream)
+aJsonClass::parseValue(aJsonObject *item, FILE* stream, char** filter)
 {
   if (stream == NULL)
     {
       return EOF; // Fail on null.
     }
-  //TODO is it better to skip here?
   if (skip(stream))
     {
       return EOF;
@@ -490,11 +489,11 @@ aJsonClass::parseValue(aJsonObject *item, FILE* stream)
     }
   else if (in == '[')
     {
-      return parseArray(item, stream);
+      return parseArray(item, stream, filter);
     }
   else if (in == '{')
     {
-      return parseObject(item, stream);
+      return parseObject(item, stream, filter);
     }
   //it can only be null, false or true
   else if (in == 'n')
@@ -594,7 +593,7 @@ aJsonClass::printValue(aJsonObject *item, FILE* stream)
 
 // Build an array from input text.
 int
-aJsonClass::parseArray(aJsonObject *item, FILE* stream)
+aJsonClass::parseArray(aJsonObject *item, FILE* stream, char** filter)
 {
   aJsonObject *child;
   int in = fgetc(stream);
@@ -621,7 +620,7 @@ aJsonClass::parseArray(aJsonObject *item, FILE* stream)
       return EOF; // memory fail
     }
   skip(stream);
-  if (parseValue(child, stream))
+  if (parseValue(child, stream, filter))
     {
       return EOF;
     }
@@ -638,7 +637,7 @@ aJsonClass::parseArray(aJsonObject *item, FILE* stream)
       new_item->prev = child;
       child = new_item;
       skip(stream);
-      if (parseValue(child, stream))
+      if (parseValue(child, stream, filter))
         {
           return EOF;
         }
@@ -686,7 +685,7 @@ aJsonClass::printArray(aJsonObject *item, FILE* stream)
 
 // Build an object from the text.
 int
-aJsonClass::parseObject(aJsonObject *item, FILE* stream)
+aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
 {
   int in = fgetc(stream);
   if (in != '{')
@@ -712,6 +711,7 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream)
       return EOF;
     }
   skip(stream);
+  //TODO filtering!
   child->name = child->value.valuestring;
   child->value.valuestring = NULL;
   in = fgetc(stream);
@@ -721,7 +721,7 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream)
     }
   // skip any spacing, get the value.
   skip(stream);
-  if (parseValue(child, stream))
+  if (parseValue(child, stream, filter))
     {
       return EOF;
     }
@@ -753,7 +753,7 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream)
           return EOF; // fail!
         }
       skip(stream);
-      if (parseValue(child, stream) == EOF)
+      if (parseValue(child, stream, filter) == EOF)
         ; // skip any spacing, get the value.
         {
           return EOF;
