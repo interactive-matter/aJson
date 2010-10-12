@@ -710,7 +710,7 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
       return 0; // empty array.
     }
   //preserver the char for the next parser
-  ungetc(in);
+  ungetc(in,stream);
 
   aJsonObject *child = newItem();
   item->child = child;
