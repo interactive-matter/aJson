@@ -720,6 +720,7 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
   skip(stream);
   //TODO filtering!
   child->name = child->value.valuestring;
+  Serial.println(child->name);
   child->value.valuestring = NULL;
   in = fgetc(stream);
   if (in != ':')
