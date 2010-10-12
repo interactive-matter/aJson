@@ -39,6 +39,7 @@
 #include <avr/pgmspace.h>
 #include "aJSON.h"
 #include "utility/streamhelper.h"
+#include <HardwareSerial.h>
 
 /******************************************************************************
  * Definitions
@@ -79,6 +80,7 @@ aJsonClass::deleteItem(aJsonObject *c)
 int
 aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
 {
+  Serial.println("parsing number");
   int i = 0;
   char sign = 1;
 
@@ -197,6 +199,7 @@ aJsonClass::printFloat(aJsonObject *item, FILE* stream)
 int
 aJsonClass::parseString(aJsonObject *item, FILE* stream)
 {
+  Serial.println("parsing string");
   //we do not need to skip here since the first byte should be '\"'
   int in = fgetc(stream);
   if (in != '\"')
@@ -461,6 +464,7 @@ aJsonClass::print(aJsonObject* item)
 int
 aJsonClass::parseValue(aJsonObject *item, FILE* stream, char** filter)
 {
+  Serial.println("Parsing value");
   if (stream == NULL)
     {
       return EOF; // Fail on null.
@@ -595,6 +599,8 @@ aJsonClass::printValue(aJsonObject *item, FILE* stream)
 int
 aJsonClass::parseArray(aJsonObject *item, FILE* stream, char** filter)
 {
+  Serial.println("parsing array");
+
   aJsonObject *child;
   int in = fgetc(stream);
   if (in != '[')
@@ -687,6 +693,7 @@ aJsonClass::printArray(aJsonObject *item, FILE* stream)
 int
 aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
 {
+  Serial.println("parsing object");
   int in = fgetc(stream);
   if (in != '{')
     return EOF; // not an object!
