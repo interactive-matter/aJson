@@ -38,7 +38,7 @@
 #include <ctype.h>
 #include <avr/pgmspace.h>
 #include "aJSON.h"
-#include "util/streamhelper.h"
+#include "utility/streamhelper.h"
 
 /******************************************************************************
  * Definitions
