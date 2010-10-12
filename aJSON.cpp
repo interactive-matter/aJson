@@ -204,6 +204,8 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
   int in = fgetc(stream);
   if (in != '\"')
     {
+      Serial.print(in);
+      Serial.println("no string!");
       return EOF; // not a string!
     }
   //allocate a buffer & track how long it is and how much we have read
@@ -696,7 +698,9 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
   Serial.println("parsing object");
   int in = fgetc(stream);
   if (in != '{')
-    return EOF; // not an object!
+    {
+      return EOF; // not an object!
+    }
 
   item->type = aJson_Object;
   skip(stream);
@@ -705,6 +709,8 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
     {
       return 0; // empty array.
     }
+  //preserver the char for the next parser
+  ungetc(in);
 
   aJsonObject *child = newItem();
   item->child = child;
@@ -715,6 +721,7 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
   skip(stream);
   if (parseString(child, stream) == EOF)
     {
+      Serial.println("EOF");
       return EOF;
     }
   skip(stream);
@@ -725,12 +732,14 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
   in = fgetc(stream);
   if (in != ':')
     {
+      Serial.println("EOF");
       return EOF; // fail!
     }
   // skip any spacing, get the value.
   skip(stream);
   if (parseValue(child, stream, filter))
     {
+      Serial.println("EOF");
       return EOF;
     }
   skip(stream);
