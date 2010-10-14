@@ -101,6 +101,8 @@ openStringOutputStream(void)
 char*
 closeStringOutputStream(FILE* stream)
 {
+	//write a 0 to the end - that is how a string looks like
+	fputc(0,stream);
   string_output_stream_info* udata =
       (string_output_stream_info*) fdev_get_udata(stream);
   char* result = udata->string;
@@ -151,19 +153,18 @@ char*
 addToBuffer(char value, char* buffer, unsigned int* buffer_length,
     unsigned int* buffer_bytes)
 {
-  if ((buffer_bytes + 1) >= buffer_length)
+  if (((*buffer_bytes) + 1) >= (*buffer_length))
     {
-      buffer = (char*) realloc((void*) buffer, (*buffer_length
+      buffer = (char*) realloc((void*) buffer, ((*buffer_length)
           + BUFFER_DEFAULT_SIZE) * sizeof(char));
       if (buffer == NULL)
         {
           return NULL;
         }
-      *buffer_length += BUFFER_DEFAULT_SIZE;
-      buffer[*buffer_bytes] = value;
-      *buffer_bytes += 1;
-      return buffer;
+      (*buffer_length) += BUFFER_DEFAULT_SIZE;
     }
-  return buffer;
+	buffer[*buffer_bytes] = value;
+	(*buffer_bytes) += 1;
+	return buffer;
 }
 
