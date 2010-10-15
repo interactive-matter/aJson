@@ -39,6 +39,7 @@
 #include <avr/pgmspace.h>
 #include "aJSON.h"
 #include "utility/streamhelper.h"
+#include "utility/stringbuffer.h"
 #include <HardwareSerial.h>
 
 /******************************************************************************
@@ -67,8 +68,8 @@ aJsonClass::deleteItem(aJsonObject *c)
       next = c->next;
       if (!(c->type & aJson_IsReference) && c->child)
         deleteItem(c->child);
-      if ((c->type == aJson_String) && c->value.valuestring)
-        free(c->value.valuestring);
+      if ((c->type == aJson_String) && c->valuestring)
+        free(c->valuestring);
       if (c->name)
         free(c->name);
       free(c);
@@ -112,7 +113,7 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
   //end of integer part Ð or isn't it?
   if (!(in == '.' || in == 'e' || in == 'E'))
     {
-      item->value.valueint = i * (int) sign;
+      item->valueint = i * (int) sign;
       item->type = aJson_Int;
     }
   //ok it seems to be a float
@@ -154,7 +155,7 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
       n = sign * n * pow(10.0, ((float) scale + (float) subscale
           * (float) signsubscale)); // number = +/- number.fraction * 10^+/- exponent
 
-      item->value.valuefloat = n;
+      item->valuefloat = n;
       item->type = aJson_Float;
     }
   return 0;
@@ -166,7 +167,7 @@ aJsonClass::printInt(aJsonObject *item, FILE* stream)
 {
   if (item != NULL)
     {
-      return fprintf_P(stream, PSTR("%d"), item->value.valueint);
+      return fprintf_P(stream, PSTR("%d"), item->valueint);
     }
   //printing nothing is ok
   return 0;
@@ -177,7 +178,7 @@ aJsonClass::printFloat(aJsonObject *item, FILE* stream)
 {
   if (item != NULL)
     {
-      float d = item->value.valuefloat;
+      float d = item->valuefloat;
       if (fabs(floor(d) - d) <= DBL_EPSILON)
         {
           return fprintf_P(stream, PSTR("%.0f"), d);
@@ -209,7 +210,7 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
       return EOF; // not a string!
     }
   //allocate a buffer & track how long it is and how much we have read
-  char* buffer = (char*) malloc(BUFFER_DEFAULT_SIZE * sizeof(char));
+  string_buffer* buffer = stringBufferCreate();
   if (buffer == NULL)
     {
       //unable to allocate the string
@@ -221,15 +222,14 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
       free(buffer);
       return EOF;
     }
-  unsigned int buffer_length = BUFFER_DEFAULT_SIZE;
-  unsigned int buffer_bytes = 0;
   while (in != EOF)
     {
       while (in != '\"' && in > 31)
         {
           if (in != '\\')
-            buffer = addToBuffer((char) in, buffer, &buffer_length,
-                &buffer_bytes);
+            if (stringBufferAdd((char) in, buffer)) {
+                return EOF;
+            }
           else
             {
               in = fgetc(stream);
@@ -241,24 +241,29 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
               switch (in)
                 {
               case 'b':
-                buffer = addToBuffer('\b', buffer, &buffer_length,
-                    &buffer_bytes);
+                if (stringBufferAdd('\b', buffer)) {
+                    return EOF;
+                }
                 break;
               case 'f':
-                buffer = addToBuffer('\f', buffer, &buffer_length,
-                    &buffer_bytes);
+                if (stringBufferAdd('\f', buffer)) {
+                    return EOF;
+                }
                 break;
               case 'n':
-                buffer = addToBuffer('\n', buffer, &buffer_length,
-                    &buffer_bytes);
+                if(stringBufferAdd('\n', buffer)) {
+                    return EOF;
+                }
                 break;
               case 'r':
-                buffer = addToBuffer('\r', buffer, &buffer_length,
-                    &buffer_bytes);
+                if (stringBufferAdd('\r', buffer)) {
+                    return EOF;
+                }
                 break;
               case 't':
-                buffer = addToBuffer('\t', buffer, &buffer_length,
-                    &buffer_bytes);
+                if (stringBufferAdd('\t', buffer)) {
+                    return EOF;
+                }
                 break;
               default:
                 //we do not understand it so we skip it
@@ -273,15 +278,13 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
             }
         }
       //the string ends here
-      buffer = addToBuffer(0, buffer, &buffer_length, &buffer_bytes);
       if (in == EOF)
         {
           free(buffer);
           return EOF;
         }
       //trim the buffer
-      buffer = (char*) realloc(buffer, buffer_bytes);
-      item->value.valuestring = buffer;
+      item->valuestring = stringBufferToString(buffer);
       item->type = aJson_String;
       return 0;
     }
@@ -378,7 +381,7 @@ aJsonClass::printStringPtr(const char *str, FILE* stream)
 int
 aJsonClass::printString(aJsonObject *item, FILE* stream)
 {
-  return printStringPtr(item->value.valuestring, stream);
+  return printStringPtr(item->valuestring, stream);
 }
 
 // Utility to jump whitespace and cr/lf
@@ -533,7 +536,7 @@ aJsonClass::parseValue(aJsonObject *item, FILE* stream, char** filter)
       if (!strncmp(buffer, "false", 5))
         {
           item->type = aJson_False;
-          item->value.valuebool = 0;
+          item->valuebool = 0;
           return 0;
         }
     }
@@ -549,7 +552,7 @@ aJsonClass::parseValue(aJsonObject *item, FILE* stream, char** filter)
       if (!strncmp(buffer, "true", 4))
         {
           item->type = aJson_True;
-          item->value.valuebool = 1;
+          item->valuebool = 1;
           return 0;
         }
     }
@@ -710,7 +713,7 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
       return 0; // empty array.
     }
   //preserver the char for the next parser
-  ungetc(in,stream);
+  ungetc(in, stream);
 
   aJsonObject *child = newItem();
   item->child = child;
@@ -726,9 +729,9 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
     }
   skip(stream);
   //TODO filtering!
-  child->name = child->value.valuestring;
+  child->name = child->valuestring;
   Serial.println(child->name);
-  child->value.valuestring = NULL;
+  child->valuestring = NULL;
   in = fgetc(stream);
   if (in != ':')
     {
@@ -761,8 +764,8 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
           return EOF;
         }
       skip(stream);
-      child->name = child->value.valuestring;
-      child->value.valuestring = NULL;
+      child->name = child->valuestring;
+      child->valuestring = NULL;
 
       in = fgetc(stream);
       if (in != ':')
@@ -1013,7 +1016,7 @@ aJsonClass::createTrue()
   if (item)
     {
       item->type = aJson_True;
-      item->value.valuebool = -1;
+      item->valuebool = -1;
     }
   return item;
 }
@@ -1024,7 +1027,7 @@ aJsonClass::createFalse()
   if (item)
     {
       item->type = aJson_False;
-      item->value.valuebool = 0;
+      item->valuebool = 0;
     }
   return item;
 }
@@ -1035,7 +1038,7 @@ aJsonClass::createItem(char b)
   if (item)
     {
       item->type = b ? aJson_True : aJson_False;
-      item->value.valuebool = b ? -1 : 0;
+      item->valuebool = b ? -1 : 0;
     }
   return item;
 }
@@ -1047,7 +1050,7 @@ aJsonClass::createItem(int num)
   if (item)
     {
       item->type = aJson_Int;
-      item->value.valueint = (int) num;
+      item->valueint = (int) num;
     }
   return item;
 }
@@ -1059,7 +1062,7 @@ aJsonClass::createItem(float num)
   if (item)
     {
       item->type = aJson_Float;
-      item->value.valuefloat = num;
+      item->valuefloat = num;
     }
   return item;
 }
@@ -1071,7 +1074,7 @@ aJsonClass::createItem(const char *string)
   if (item)
     {
       item->type = aJson_String;
-      item->value.valuestring = strdup(string);
+      item->valuestring = strdup(string);
     }
   return item;
 }

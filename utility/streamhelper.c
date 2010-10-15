@@ -24,9 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "streamhelper.h"
-
-//Default buffer (grow) size for strings
-#define BUFFER_DEFAULT_SIZE 4
+#include "stringbuffer.h"
 
 //internal prototypes
 int
@@ -39,13 +37,6 @@ typedef struct
   char* string;
   unsigned int position;
 } string_input_stream_info;
-
-typedef struct
-{
-  char* string;
-  unsigned int position;
-  unsigned int length;
-} string_output_stream_info;
 
 FILE*
 openStringInputStream(char* string)
@@ -78,41 +69,29 @@ openStringOutputStream(void)
     {
       return NULL;
     }
-  string_output_stream_info* udata = malloc(sizeof(string_output_stream_info));
-  if (udata == NULL)
+  string_buffer* buffer = stringBufferCreate();
+  if (buffer == NULL)
     {
       fclose(result);
       return NULL;
     }
-  char* initial_string = malloc(BUFFER_DEFAULT_SIZE * sizeof(char));
-  if (initial_string == NULL)
-    {
-      free(udata);
-      fclose(result);
-      return NULL;
-    }
-  udata->string = initial_string;
-  udata->length = BUFFER_DEFAULT_SIZE;
-  udata->position = 0;
-  fdev_set_udata(result,udata);
+  fdev_set_udata(result,buffer);
   return result;
 }
 
 char*
 closeStringOutputStream(FILE* stream)
 {
-	//write a 0 to the end - that is how a string looks like
-	fputc(0,stream);
-  string_output_stream_info* udata =
-      (string_output_stream_info*) fdev_get_udata(stream);
-  char* result = udata->string;
+  //write a 0 to the end - that is how a string looks like
+  string_buffer* buffer =
+      (string_buffer*) fdev_get_udata(stream);
+  char* result = stringBufferToString(buffer);
   if (result == NULL)
     {
       fclose(stream);
       return NULL;
     }
-  udata->string = NULL;
-  result = realloc(result, udata->length * sizeof(char));
+  fdev_set_udata(stream,NULL);
   fclose(stream);
   return result;
 }
@@ -137,34 +116,10 @@ stringGet(FILE* stream)
 int
 stringPut(char c, FILE* stream)
 {
-  string_output_stream_info* udata =
-      (string_output_stream_info*) fdev_get_udata(stream);
-  char* string = addToBuffer(c, udata->string, &(udata->length),
-      &(udata->position));
-  if (string == NULL)
-    {
+  string_buffer* buffer =
+      (string_buffer*) fdev_get_udata(stream);
+  if (stringBufferAdd(c, buffer)) {
       return EOF;
-    }
-  udata->string = string;
+  }
   return 0;
 }
-
-char*
-addToBuffer(char value, char* buffer, unsigned int* buffer_length,
-    unsigned int* buffer_bytes)
-{
-  if (((*buffer_bytes) + 1) >= (*buffer_length))
-    {
-      buffer = (char*) realloc((void*) buffer, ((*buffer_length)
-          + BUFFER_DEFAULT_SIZE) * sizeof(char));
-      if (buffer == NULL)
-        {
-          return NULL;
-        }
-      (*buffer_length) += BUFFER_DEFAULT_SIZE;
-    }
-	buffer[*buffer_bytes] = value;
-	(*buffer_bytes) += 1;
-	return buffer;
-}
-

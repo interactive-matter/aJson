@@ -48,6 +48,7 @@
 
 // The aJson structure:
 typedef struct aJsonObject {
+        char *name; // The item's name string, if this item is the child of, or is in the list of subitems of an object.
 	struct aJsonObject *next, *prev; // next/prev allow you to walk array/object chains. Alternatively, use GetArraySize/GetArrayItem/GetObjectItem
 	struct aJsonObject *child; // An array or object item will have a child pointer pointing to a chain of the items in the array/object.
 
@@ -58,9 +59,7 @@ typedef struct aJsonObject {
 		char valuebool; //the items value for true & false
 		int valueint; // The item's number, if type==aJson_Number
 		float valuefloat; // The item's number, if type==aJson_Number
-	} value;
-
-	char *name; // The item's name string, if this item is the child of, or is in the list of subitems of an object.
+	};
 } aJsonObject;
 
 class aJsonClass {
