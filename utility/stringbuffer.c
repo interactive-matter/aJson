@@ -22,51 +22,104 @@
  *      Author: marcus
  */
 #include <stdlib.h>
+#include <string.h>
 #include "stringbuffer.h"
 
-//Default buffer (grow) size for strings
-#define BUFFER_DEFAULT_SIZE 4
+//Default buffer size for strings
+#define BUFFER_SIZE 256
+//there is a static buffer allocated, which is used to decode strings to
+//strings cannot be longer than the buffer
+char global_buffer[BUFFER_SIZE];
 
-string_buffer* stringBufferCreate(void) {
+string_buffer*
+stringBufferCreate(void)
+{
   string_buffer* result = malloc(sizeof(string_buffer));
-  if (result==NULL) {
+  if (result == NULL)
+    {
       return NULL;
-  }
-  result->string = malloc(BUFFER_DEFAULT_SIZE*sizeof(char));
-  if (result->string==NULL) {
-      free(result);
-      return NULL;
-  }
-  result->memory=BUFFER_DEFAULT_SIZE;
-  result->string_length=0;
+    }
+  result->string = global_buffer;
+  memset((void*) global_buffer, 0, BUFFER_SIZE);
+  //unused - but will be usefull after realloc got fixd
+  /*  if (result->string==NULL) {
+   free(result);
+   return NULL;
+   }
+   result->memory=BUFFER_DEFAULT_SIZE;*/
+  result->memory = BUFFER_SIZE;
+  result->string_length = 0;
   return result;
 }
 
 char
 stringBufferAdd(char value, string_buffer* buffer)
 {
-  if (buffer->string_length + 1 >= buffer->memory)
+  if (buffer->string_length >= buffer->memory)
     {
-      buffer->string = (char*) realloc((void*) buffer->string, (buffer->memory
-          + BUFFER_DEFAULT_SIZE) * sizeof(char));
-      if (buffer->string == NULL)
-        {
-          return -1;
-        }
-      buffer->memory += BUFFER_DEFAULT_SIZE;
+      //this has to be enabled after realloc works
+      /*char* new_string = (char*) realloc((void*) buffer->string, (buffer->memory
+       + BUFFER_DEFAULT_SIZE) * sizeof(char));
+       if (new_string == NULL)
+       {
+       free(buffer->string);
+       buffer->string = NULL;
+       return -1;
+       } else {
+       buffer->string = new_string;
+       }
+       buffer->memory += BUFFER_DEFAULT_SIZE;*/
+      //in the meantime we just drop it
+      return 0; //EOF would be a better choice - but that breaks json decoding
     }
   buffer->string[buffer->string_length] = value;
   buffer->string_length += 1;
   return 0;
 }
 
-char* stringBufferToString(string_buffer* buffer) {
-  char* result = buffer->string;
+char*
+stringBufferToString(string_buffer* buffer)
+{
+  //this is the realloc dependent function - it does not work
+  //  char* result = buffer->string;
   //ensure that the string ends with 0
-  if (buffer->string_length==0 || buffer->string[buffer->string_length-1]!=0) {
-      stringBufferAdd(0,buffer);
-  }
-  result = realloc(result, buffer->memory);
+  if (buffer->string_length == 0 || buffer->string[(buffer->string_length - 1)]
+      != 0)
+    {
+      stringBufferAdd(0, buffer);
+    }
+  /*  char* string = realloc(result, buffer->string_length);
+   if (string==NULL) {
+   free(result);
+   }
+   buffer->string=NULL;
+   free(buffer);
+   return string;*/
+  char* result = malloc(buffer->string_length * sizeof(char));
+  if (result == NULL)
+    {
+      return NULL;
+    }
+  strcpy(result, global_buffer);
+  buffer->string = NULL;
   free(buffer);
   return result;
 }
+
+void
+stringBufferFree(string_buffer* buffer)
+{
+  if (buffer == NULL)
+    {
+      //hmm it was null before - whatever
+      return;
+    }
+  //this is not needed in this realloc free concept
+  /*
+   if (buffer->string!=NULL) {
+   free(buffer->string);
+   }
+   */
+  free(buffer);
+}
+

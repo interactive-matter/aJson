@@ -61,6 +61,23 @@ openStringInputStream(char* string)
   return result;
 }
 
+void
+closeStringInputStream(FILE* stream)
+{
+  if (stream == NULL)
+    {
+      return;
+    }
+  string_input_stream_info* udata =
+      (string_input_stream_info*) fdev_get_udata(stream);
+  if (udata != NULL)
+    {
+      free(udata);
+    }
+  fdev_set_udata(stream,NULL);
+  fclose(stream);
+}
+
 FILE*
 openStringOutputStream(void)
 {
@@ -83,14 +100,14 @@ char*
 closeStringOutputStream(FILE* stream)
 {
   //write a 0 to the end - that is how a string looks like
-  string_buffer* buffer =
-      (string_buffer*) fdev_get_udata(stream);
+  string_buffer* buffer = (string_buffer*) fdev_get_udata(stream);
   char* result = stringBufferToString(buffer);
   if (result == NULL)
     {
       fclose(stream);
       return NULL;
     }
+  //free(buffer);
   fdev_set_udata(stream,NULL);
   fclose(stream);
   return result;
@@ -116,10 +133,10 @@ stringGet(FILE* stream)
 int
 stringPut(char c, FILE* stream)
 {
-  string_buffer* buffer =
-      (string_buffer*) fdev_get_udata(stream);
-  if (stringBufferAdd(c, buffer)) {
+  string_buffer* buffer = (string_buffer*) fdev_get_udata(stream);
+  if (stringBufferAdd(c, buffer))
+    {
       return EOF;
-  }
+    }
   return 0;
 }

@@ -33,6 +33,8 @@ extern "C"
 #endif
   FILE*
   openStringInputStream(char* string);
+  void
+  closeStringInputStream(FILE* stream);
   FILE*
   openStringOutputStream(void);
   char*
@@ -41,5 +43,4 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
-
 #endif /* STREAMHELPER_H_ */

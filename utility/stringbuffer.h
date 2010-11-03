@@ -37,16 +37,19 @@ extern "C"
 {
 #endif
 
-string_buffer*
-stringBufferCreate(void);
+  string_buffer*
+  stringBufferCreate(void);
 
-char
-stringBufferAdd(char value, string_buffer* buffer);
+  char
+  stringBufferAdd(char value, string_buffer* buffer);
 
-char*
-stringBufferToString(string_buffer* buffer);
+  char*
+  stringBufferToString(string_buffer* buffer);
+
+  void
+  stringBufferFree(string_buffer* buffer);
+
 #ifdef __cplusplus
 }
 #endif
-
 #endif /* STRINGBUFFER_H_ */

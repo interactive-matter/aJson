@@ -40,7 +40,6 @@
 #include "aJSON.h"
 #include "utility/streamhelper.h"
 #include "utility/stringbuffer.h"
-#include <HardwareSerial.h>
 
 /******************************************************************************
  * Definitions
@@ -67,11 +66,17 @@ aJsonClass::deleteItem(aJsonObject *c)
     {
       next = c->next;
       if (!(c->type & aJson_IsReference) && c->child)
-        deleteItem(c->child);
+        {
+          deleteItem(c->child);
+        }
       if ((c->type == aJson_String) && c->valuestring)
-        free(c->valuestring);
+        {
+          free(c->valuestring);
+        }
       if (c->name)
-        free(c->name);
+        {
+          free(c->name);
+        }
       free(c);
       c = next;
     }
@@ -81,7 +86,6 @@ aJsonClass::deleteItem(aJsonObject *c)
 int
 aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
 {
-  Serial.println("parsing number");
   int i = 0;
   char sign = 1;
 
@@ -90,7 +94,6 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
     {
       return EOF;
     }
-
   // It is easier to decode ourselves than to use sscnaf, since so we can easier decide btw
   // int & float
   if (in == '-')
@@ -158,6 +161,8 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
       item->valuefloat = n;
       item->type = aJson_Float;
     }
+  //preserve the last character for the next routine
+  ungetc(in, stream);
   return 0;
 }
 
@@ -200,15 +205,13 @@ aJsonClass::printFloat(aJsonObject *item, FILE* stream)
 int
 aJsonClass::parseString(aJsonObject *item, FILE* stream)
 {
-  Serial.println("parsing string");
   //we do not need to skip here since the first byte should be '\"'
   int in = fgetc(stream);
   if (in != '\"')
     {
-      Serial.print(in);
-      Serial.println("no string!");
       return EOF; // not a string!
     }
+  item->type = aJson_String;
   //allocate a buffer & track how long it is and how much we have read
   string_buffer* buffer = stringBufferCreate();
   if (buffer == NULL)
@@ -219,51 +222,47 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
   in = fgetc(stream);
   if (in == EOF)
     {
-      free(buffer);
+      stringBufferFree(buffer);
       return EOF;
     }
   while (in != EOF)
     {
-      while (in != '\"' && in > 31)
+      while (in != '\"' && in >= 32)
         {
           if (in != '\\')
-            if (stringBufferAdd((char) in, buffer)) {
-                return EOF;
+            {
+              stringBufferAdd((char) in, buffer);
             }
           else
             {
               in = fgetc(stream);
               if (in == EOF)
                 {
-                  free(buffer);
+                  stringBufferFree(buffer);
                   return EOF;
                 }
               switch (in)
                 {
+              case '\\':
+                stringBufferAdd('\\', buffer);
+                break;
+              case '\"':
+                stringBufferAdd('\"', buffer);
+                break;
               case 'b':
-                if (stringBufferAdd('\b', buffer)) {
-                    return EOF;
-                }
+                stringBufferAdd('\b', buffer);
                 break;
               case 'f':
-                if (stringBufferAdd('\f', buffer)) {
-                    return EOF;
-                }
+                stringBufferAdd('\f', buffer);
                 break;
               case 'n':
-                if(stringBufferAdd('\n', buffer)) {
-                    return EOF;
-                }
+                stringBufferAdd('\n', buffer);
                 break;
               case 'r':
-                if (stringBufferAdd('\r', buffer)) {
-                    return EOF;
-                }
+                stringBufferAdd('\r', buffer);
                 break;
               case 't':
-                if (stringBufferAdd('\t', buffer)) {
-                    return EOF;
-                }
+                stringBufferAdd('\t', buffer);
                 break;
               default:
                 //we do not understand it so we skip it
@@ -273,19 +272,12 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
           in = fgetc(stream);
           if (in == EOF)
             {
-              free(buffer);
+              stringBufferFree(buffer);
               return EOF;
             }
         }
       //the string ends here
-      if (in == EOF)
-        {
-          free(buffer);
-          return EOF;
-        }
-      //trim the buffer
       item->valuestring = stringBufferToString(buffer);
-      item->type = aJson_String;
       return 0;
     }
   //we should not be here but it is ok
@@ -414,7 +406,7 @@ aJsonClass::parse(char *value)
 {
   FILE* string_input_stream = openStringInputStream(value);
   aJsonObject* result = parse(string_input_stream, NULL);
-  fclose(string_input_stream);
+  closeStringInputStream(string_input_stream);
   return result;
 }
 
@@ -438,7 +430,7 @@ aJsonClass::parse(FILE* stream, char** filter)
     return NULL; /* memory fail */
 
   skip(stream);
-  if (!parseValue(c, stream, filter))
+  if (parseValue(c, stream, filter) == EOF)
     {
       deleteItem(c);
       return NULL;
@@ -469,12 +461,11 @@ aJsonClass::print(aJsonObject* item)
 int
 aJsonClass::parseValue(aJsonObject *item, FILE* stream, char** filter)
 {
-  Serial.println("Parsing value");
   if (stream == NULL)
     {
       return EOF; // Fail on null.
     }
-  if (skip(stream))
+  if (skip(stream) == EOF)
     {
       return EOF;
     }
@@ -552,7 +543,7 @@ aJsonClass::parseValue(aJsonObject *item, FILE* stream, char** filter)
       if (!strncmp(buffer, "true", 4))
         {
           item->type = aJson_True;
-          item->valuebool = 1;
+          item->valuebool = -1;
           return 0;
         }
     }
@@ -565,7 +556,7 @@ int
 aJsonClass::printValue(aJsonObject *item, FILE* stream)
 {
   int result = 0;
-  if (!item)
+  if (item == NULL)
     {
       //nothing to do
       return 0;
@@ -573,7 +564,7 @@ aJsonClass::printValue(aJsonObject *item, FILE* stream)
   switch (item->type)
     {
   case aJson_NULL:
-    result = fprintf_P(stream, PSTR("null"));
+    result = fprintf(stream, PSTR("null"));
     break;
   case aJson_False:
     result = fprintf_P(stream, PSTR("false"));
@@ -604,9 +595,6 @@ aJsonClass::printValue(aJsonObject *item, FILE* stream)
 int
 aJsonClass::parseArray(aJsonObject *item, FILE* stream, char** filter)
 {
-  Serial.println("parsing array");
-
-  aJsonObject *child;
   int in = fgetc(stream);
   if (in != '[')
     {
@@ -616,36 +604,32 @@ aJsonClass::parseArray(aJsonObject *item, FILE* stream, char** filter)
   item->type = aJson_Array;
   skip(stream);
   in = fgetc(stream);
+  //check for empty array
   if (in == ']')
     {
       return 0; // empty array.
     }
   //now put back the last character
-  if (ungetc(in, stream) == EOF)
-    {
-      return EOF;
-    }
-  item->child = child = newItem();
-  if (item->child == NULL)
-    {
-      return EOF; // memory fail
-    }
-  skip(stream);
-  if (parseValue(child, stream, filter))
-    {
-      return EOF;
-    }
-  skip(stream);
-  in = fgetc(stream);
-  while (in == ',')
+  ungetc(in, stream);
+  aJsonObject *child;
+  char first = -1;
+  while ((first) || (in == ','))
     {
       aJsonObject *new_item = newItem();
       if (new_item == NULL)
         {
           return EOF; // memory fail
         }
-      child->next = new_item;
-      new_item->prev = child;
+      if (first)
+        {
+          item->child = new_item;
+          first = 0;
+        }
+      else
+        {
+          child->next = new_item;
+          new_item->prev = child;
+        }
       child = new_item;
       skip(stream);
       if (parseValue(child, stream, filter))
@@ -655,7 +639,14 @@ aJsonClass::parseArray(aJsonObject *item, FILE* stream, char** filter)
       skip(stream);
       in = fgetc(stream);
     }
-  return 0; // malformed.
+  if (in == ']')
+    {
+      return 0; // end of array
+    }
+  else
+    {
+      return EOF; // malformed.
+    }
 }
 
 // Render an array to text
@@ -698,7 +689,6 @@ aJsonClass::printArray(aJsonObject *item, FILE* stream)
 int
 aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
 {
-  Serial.println("parsing object");
   int in = fgetc(stream);
   if (in != '{')
     {
@@ -707,56 +697,35 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
 
   item->type = aJson_Object;
   skip(stream);
+  //check for an empty object
   in = fgetc(stream);
   if (in == '}')
     {
-      return 0; // empty array.
+      return 0; // empty object.
     }
-  //preserver the char for the next parser
+  //preserve the char for the next parser
   ungetc(in, stream);
 
-  aJsonObject *child = newItem();
-  item->child = child;
-  if (item->child == NULL)
+  aJsonObject* child;
+  char first = -1;
+  while ((first) || (in == ','))
     {
-      return EOF; //memory fail
-    }
-  skip(stream);
-  if (parseString(child, stream) == EOF)
-    {
-      Serial.println("EOF");
-      return EOF;
-    }
-  skip(stream);
-  //TODO filtering!
-  child->name = child->valuestring;
-  Serial.println(child->name);
-  child->valuestring = NULL;
-  in = fgetc(stream);
-  if (in != ':')
-    {
-      Serial.println("EOF");
-      return EOF; // fail!
-    }
-  // skip any spacing, get the value.
-  skip(stream);
-  if (parseValue(child, stream, filter))
-    {
-      Serial.println("EOF");
-      return EOF;
-    }
-  skip(stream);
-  in = fgetc(stream);
-  while (in == ',')
-    {
-      in = fgetc(stream);
-      aJsonObject *new_item = newItem();
+      //in = fgetc(stream);
+      aJsonObject* new_item = newItem();
       if (new_item == NULL)
         {
           return EOF; // memory fail
         }
-      child->next = new_item;
-      new_item->prev = child;
+      if (first)
+        {
+          first = 0;
+          item->child = new_item;
+        }
+      else
+        {
+          child->next = new_item;
+          new_item->prev = child;
+        }
       child = new_item;
       skip(stream);
       if (parseString(child, stream) == EOF)
@@ -772,15 +741,15 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
         {
           return EOF; // fail!
         }
+      // skip any spacing, get the value.
       skip(stream);
       if (parseValue(child, stream, filter) == EOF)
-        ; // skip any spacing, get the value.
         {
           return EOF;
         }
+      in = fgetc(stream);
     }
 
-  in = fgetc(stream);
   if (in == '}')
     {
       return 0; // end of array
@@ -857,7 +826,7 @@ aJsonObject*
 aJsonClass::getObjectItem(aJsonObject *object, const char *string)
 {
   aJsonObject *c = object->child;
-  while (c && strcmp(c->name, string))
+  while (c && strcasecmp(c->name, string))
     c = c->next;
   return c;
 }
@@ -951,7 +920,7 @@ aJsonClass::detachItemFromObject(aJsonObject *object, const char *string)
 {
   unsigned char i = 0;
   aJsonObject *c = object->child;
-  while (c && strcmp(c->name, string))
+  while (c && strcasecmp(c->name, string))
     i++, c = c->next;
   if (c)
     return detachItemFromArray(object, i);
@@ -990,7 +959,7 @@ aJsonClass::replaceItemInObject(aJsonObject *object, const char *string,
 {
   unsigned char i = 0;
   aJsonObject *c = object->child;
-  while (c && strcmp(c->name, string))
+  while (c && strcasecmp(c->name, string))
     i++, c = c->next;
   if (c)
     {
