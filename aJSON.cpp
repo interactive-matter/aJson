@@ -47,6 +47,9 @@
 //Default buffer sizes - buffers get initialized and grow acc to that size
 #define BUFFER_DEFAULT_SIZE 4
 
+//how much digits after . for float
+#define FLOAT_PRECISION 5
+
 // Internal constructor.
 aJsonObject*
 aJsonClass::newItem()
@@ -94,8 +97,8 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
     {
       return EOF;
     }
-  // It is easier to decode ourselves than to use sscnaf, since so we can easier decide btw
-  // int & double
+  // It is easier to decode ourselves than to use sscnaf,
+  // since so we can easier decide between int & double
   if (in == '-')
     {
       //it is a negative number
@@ -109,7 +112,7 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
   if (in >= '0' && in <= '9')
     do
       {
-        i = (i * 10.0) + (in - '0');
+        i = (i * 10) + (in - '0');
         in = fgetc(stream);
       }
     while (in >= '0' && in <= '9'); // Number?
@@ -194,6 +197,9 @@ aJsonClass::printFloat(aJsonObject *item, FILE* stream)
       //print the fractional part
       double fractional_part = d - ((double)integer_number);
       //we do a do-while since we want to print at least one zero
+      //we just support a certain number of digits after the '.'
+      int n = FLOAT_PRECISION;
+      fractional_part += 0.5/(10.0*((double)FLOAT_PRECISION));
       do {
           //make the first digit non fractional(shift it before the '.'
           fractional_part *= 10.0;
@@ -203,7 +209,8 @@ aJsonClass::printFloat(aJsonObject *item, FILE* stream)
           fprintf_P(stream,PSTR("%u"),digit);
           //remove it from the number
           fractional_part -= (double)digit;
-      } while (fractional_part!=0);
+          n--;
+      } while ((fractional_part!=0) && (n>0));
     }
   //printing nothing is ok
   return 0;
@@ -596,6 +603,8 @@ aJsonClass::printValue(aJsonObject *item, FILE* stream)
     result = printObject(item, stream);
     break;
     }
+  //good time to flush the stream
+  fflush(stream);
   return result;
 }
 
