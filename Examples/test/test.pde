@@ -19,6 +19,7 @@ const prog_char PROGMEM ADDING_HEIGHT_STRING[] = "Adding height to the format\n"
 const prog_char PROGMEM ADDING_WIDTH_STRING[] = "Adding width to the format\n";
 const prog_char PROGMEM ADDING_TYPE_STRING[] = "Adding type to the format\n";
 const prog_char PROGMEM ADDING_FORMAT_STRING[] = "Adding format to the object\n";
+const prog_char PROGMEM ADDING_LENGTH_STRING[] = "Adding length to the object\n";
 const prog_char PROGMEM CREATING_FROMAT_STRING[] = "Creating format object\n";
 const prog_char PROGMEM ADDING_NAME_STRING[] = "Adding name to the object\n";
 const prog_char PROGMEM OBJECT_CREATION_FAILED_STRING[] = "Failed to create the object\n";
@@ -60,6 +61,8 @@ void testObjects() {
     aJson.addFalseToObject(fmt, "interlace");
     printProgStr( ADDING_FRAMERATE_STRING);
     aJson.addNumberToObject(fmt, "frame rate", 24);
+    printProgStr( ADDING_LENGTH_STRING);
+    aJson.addNumberToObject(fmt, "length", 1.29);
   } 
   else {
     printProgStr( FORMAT_FAILED_STRING);
@@ -211,6 +214,5 @@ void printProgStr(const prog_char* str) {
     str++;
   }
 }
-
 
 

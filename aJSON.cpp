@@ -95,7 +95,7 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
       return EOF;
     }
   // It is easier to decode ourselves than to use sscnaf, since so we can easier decide btw
-  // int & float
+  // int & double
   if (in == '-')
     {
       //it is a negative number
@@ -119,10 +119,10 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
       item->valueint = i * (int) sign;
       item->type = aJson_Int;
     }
-  //ok it seems to be a float
+  //ok it seems to be a double
   else
     {
-      float n = (float) i;
+      double n = (double) i;
       unsigned char scale = 0;
       int subscale = 0;
       char signsubscale = 1;
@@ -155,8 +155,8 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
             }
         }
 
-      n = sign * n * pow(10.0, ((float) scale + (float) subscale
-          * (float) signsubscale)); // number = +/- number.fraction * 10^+/- exponent
+      n = sign * n * pow(10.0, ((double) scale + (double) subscale
+          * (double) signsubscale)); // number = +/- number.fraction * 10^+/- exponent
 
       item->valuefloat = n;
       item->type = aJson_Float;
@@ -183,19 +183,27 @@ aJsonClass::printFloat(aJsonObject *item, FILE* stream)
 {
   if (item != NULL)
     {
-      float d = item->valuefloat;
-      if (fabs(floor(d) - d) <= DBL_EPSILON)
-        {
-          return fprintf_P(stream, PSTR("%.0f"), d);
-        }
-      else if (fabs(d) < 1.0e-6 || fabs(d) > 1.0e9)
-        {
-          return fprintf_P(stream, PSTR("%e"), d);
-        }
-      else
-        {
-          return fprintf_P(stream, PSTR("%f"), d);
-        }
+      double d = item->valuefloat;
+      if (d<0.0) {
+          fprintf_P(stream,PSTR("-"));
+          d=-d;
+      }
+      //print the integer part
+      unsigned long integer_number = (unsigned long)d;
+      fprintf_P(stream,PSTR("%u."),integer_number);
+      //print the fractional part
+      double fractional_part = d - ((double)integer_number);
+      //we do a do-while since we want to print at least one zero
+      do {
+          //make the first digit non fractional(shift it before the '.'
+          fractional_part *= 10.0;
+          //create an int out of it
+          unsigned int digit = (unsigned int) fractional_part;
+          //print it
+          fprintf_P(stream,PSTR("%u"),digit);
+          //remove it from the number
+          fractional_part -= (double)digit;
+      } while (fractional_part!=0);
     }
   //printing nothing is ok
   return 0;
@@ -1025,7 +1033,7 @@ aJsonClass::createItem(int num)
 }
 
 aJsonObject*
-aJsonClass::createItem(float num)
+aJsonClass::createItem(double num)
 {
   aJsonObject *item = newItem();
   if (item)
@@ -1084,7 +1092,7 @@ aJsonClass::createIntArray(int *numbers, unsigned char count)
 }
 
 aJsonObject*
-aJsonClass::createFloatArray(float *numbers, unsigned char count)
+aJsonClass::createFloatArray(double *numbers, unsigned char count)
 {
   unsigned char i;
   aJsonObject *n = 0, *p = 0, *a = createArray();
@@ -1101,7 +1109,7 @@ aJsonClass::createFloatArray(float *numbers, unsigned char count)
 }
 
 aJsonObject*
-aJsonClass::createDoubleArray(float *numbers, unsigned char count)
+aJsonClass::createDoubleArray(double *numbers, unsigned char count)
 {
   unsigned char i;
   aJsonObject *n = 0, *p = 0, *a = createArray();
@@ -1154,6 +1162,12 @@ aJsonClass::addFalseToObject(aJsonObject* object, const char* name)
 
 void
 aJsonClass::addNumberToObject(aJsonObject* object, const char* name, int n)
+{
+  addItemToObject(object, name, createItem(n));
+}
+
+void
+aJsonClass::addNumberToObject(aJsonObject* object, const char* name, double n)
 {
   addItemToObject(object, name, createItem(n));
 }

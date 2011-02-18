@@ -58,7 +58,7 @@ typedef struct aJsonObject {
 		char *valuestring; // The item's string, if type==aJson_String
 		char valuebool; //the items value for true & false
 		int valueint; // The item's number, if type==aJson_Number
-		float valuefloat; // The item's number, if type==aJson_Number
+		double valuefloat; // The item's number, if type==aJson_Number
 	};
 } aJsonObject;
 
@@ -96,15 +96,15 @@ public:
 	aJsonObject* createFalse();
 	aJsonObject* createItem(char b);
 	aJsonObject* createItem(int num);
-	aJsonObject* createItem(float num);
+	aJsonObject* createItem(double num);
 	aJsonObject* createItem(const char *string);
 	aJsonObject* createArray();
 	aJsonObject* createObject();
 
 	// These utilities create an Array of count items.
 	aJsonObject* createIntArray(int *numbers, unsigned char count);
-	aJsonObject* createFloatArray(float *numbers, unsigned char count);
-	aJsonObject* createDoubleArray(float *numbers, unsigned char count);
+	aJsonObject* createFloatArray(double *numbers, unsigned char count);
+	aJsonObject* createDoubleArray(double *numbers, unsigned char count);
 	aJsonObject* createStringArray(const char **strings, unsigned char count);
 
 	// Append item to the specified array/object.
@@ -132,6 +132,7 @@ public:
 	void addTrueToObject(aJsonObject* object, const char* name);
 	void addFalseToObject(aJsonObject* object, const char* name);
 	void addNumberToObject(aJsonObject* object, const char* name, int n);
+        void addNumberToObject(aJsonObject* object, const char* name, double n);
 	void addStringToObject(aJsonObject* object, const char* name,
 					const char* s);
 
