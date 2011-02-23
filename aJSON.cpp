@@ -126,7 +126,7 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
   else
     {
       double n = (double) i;
-      unsigned char scale = 0;
+      unsigned int scale = 0;
       int subscale = 0;
       char signsubscale = 1;
       if (in == '.')
@@ -199,7 +199,7 @@ aJsonClass::printFloat(aJsonObject *item, FILE* stream)
       //we do a do-while since we want to print at least one zero
       //we just support a certain number of digits after the '.'
       int n = FLOAT_PRECISION;
-      fractional_part += 0.5/(10.0*((double)FLOAT_PRECISION));
+      fractional_part += 0.5/pow(10.0, FLOAT_PRECISION);
       do {
           //make the first digit non fractional(shift it before the '.'
           fractional_part *= 10.0;
