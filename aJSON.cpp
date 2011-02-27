@@ -126,7 +126,7 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
   else
     {
       double n = (double) i;
-      unsigned int scale = 0;
+      int scale = 0;
       int subscale = 0;
       char signsubscale = 1;
       if (in == '.')
