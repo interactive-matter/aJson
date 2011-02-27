@@ -579,7 +579,7 @@ aJsonClass::printValue(aJsonObject *item, FILE* stream)
   switch (item->type)
     {
   case aJson_NULL:
-    result = fprintf(stream, PSTR("null"));
+    result = fprintf_P(stream, PSTR("null"));
     break;
   case aJson_False:
     result = fprintf_P(stream, PSTR("false"));
