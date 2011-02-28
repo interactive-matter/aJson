@@ -139,7 +139,7 @@ If you want to see how you'd build this struct in code?
 
 	aJsonObject *root,*fmt;
 	root=aJson.createObject();	
-	aJson.addItemToObject(root, "name", aJson.createString("Jack (\"Bee\") Nimble"));
+	aJson.addItemToObject(root, "name", aJson.createItem("Jack (\"Bee\") Nimble"));
 	aJson.addItemToObject(root, "format", fmt = aJson.createObject());
 	aJson.addStringToObject(fmt,"type",		"rect");
 	aJson.addNumberToObject(fmt,"width",		1920);
