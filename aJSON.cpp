@@ -764,6 +764,7 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
         {
           return EOF;
         }
+      skip(stream);
       in = fgetc(stream);
     }
 
