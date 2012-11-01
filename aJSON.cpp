@@ -37,8 +37,8 @@
 #include <float.h>
 #include <ctype.h>
 #include <avr/pgmspace.h>
+
 #include "aJSON.h"
-#include "utility/streamhelper.h"
 #include "utility/stringbuffer.h"
 
 /******************************************************************************
@@ -49,6 +49,123 @@
 
 //how much digits after . for float
 #define FLOAT_PRECISION 5
+
+
+bool
+aJsonStream::available()
+{
+  if (bucket != EOF)
+    return true;
+  while (stream()->available())
+    {
+      /* Make an effort to skip whitespace. */
+      int ch = this->getch();
+      if (ch > 32)
+       {
+	 this->ungetch(ch);
+	 return true;
+       }
+    }
+  return false;
+}
+
+int
+aJsonStream::getch()
+{
+  if (bucket != EOF)
+    {
+      int ret = bucket;
+      bucket = EOF;
+      return ret;
+    }
+  while (!stream()->available()) /* spin */;
+  return stream()->read();
+}
+
+void
+aJsonStream::ungetch(char ch)
+{
+  bucket = ch;
+}
+
+size_t
+aJsonStream::write(uint8_t ch)
+{
+  return stream()->write(ch);
+}
+
+size_t
+aJsonStream::readBytes(uint8_t *buffer, size_t len)
+{
+  for (size_t i = 0; i < len; i++)
+    {
+      int ch = this->getch();
+      if (ch == EOF)
+	{
+	  return i;
+	}
+      buffer[i] = ch;
+    }
+  return len;
+}
+
+
+int
+aJsonClientStream::getch()
+{
+  if (bucket != EOF)
+    {
+      int ret = bucket;
+      bucket = EOF;
+      return ret;
+    }
+  while (!stream()->available() && stream()->connected()) /* spin */;
+  if (!stream()->connected())
+    {
+      stream()->stop();
+      return EOF;
+    }
+  return stream()->read();
+}
+
+bool
+aJsonStringStream::available()
+{
+  if (bucket != EOF)
+    return true;
+  return inbuf_len > 0;
+}
+
+int
+aJsonStringStream::getch()
+{
+  if (bucket != EOF)
+    {
+      int ret = bucket;
+      bucket = EOF;
+      return ret;
+    }
+  if (!inbuf || !inbuf_len)
+    {
+      return EOF;
+    }
+  char ch = *inbuf++;
+  inbuf_len--;
+  return ch;
+}
+
+size_t
+aJsonStringStream::write(uint8_t ch)
+{
+  if (!outbuf || outbuf_len <= 1)
+    {
+      return 0;
+    }
+  *outbuf++ = ch; outbuf_len--;
+  *outbuf = 0;
+  return 1;
+}
+
 
 // Internal constructor.
 aJsonObject*
@@ -87,12 +204,12 @@ aJsonClass::deleteItem(aJsonObject *c)
 
 // Parse the input text to generate a number, and populate the result into item.
 int
-aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
+aJsonStream::parseNumber(aJsonObject *item)
 {
   int i = 0;
   char sign = 1;
 
-  int in = fgetc(stream);
+  int in = this->getch();
   if (in == EOF)
     {
       return EOF;
@@ -103,7 +220,7 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
     {
       //it is a negative number
       sign = -1;
-      in = fgetc(stream);
+      in = this->getch();
       if (in == EOF)
         {
           return EOF;
@@ -113,7 +230,7 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
     do
       {
         i = (i * 10) + (in - '0');
-        in = fgetc(stream);
+        in = this->getch();
       }
     while (in >= '0' && in <= '9'); // Number?
   //end of integer part Ð or isn't it?
@@ -131,30 +248,30 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
       char signsubscale = 1;
       if (in == '.')
         {
-          in = fgetc(stream);
+          in = this->getch();
           do
             {
               n = (n * 10.0) + (in - '0'), scale--;
-              in = fgetc(stream);
+              in = this->getch();
             }
           while (in >= '0' && in <= '9');
         } // Fractional part?
       if (in == 'e' || in == 'E') // Exponent?
         {
-          in = fgetc(stream);
+          in = this->getch();
           if (in == '+')
             {
-              in = fgetc(stream);
+              in = this->getch();
             }
           else if (in == '-')
             {
               signsubscale = -1;
-              in = fgetc(stream);
+              in = this->getch();
             }
           while (in >= '0' && in <= '9')
             {
               subscale = (subscale * 10) + (in - '0'); // Number?
-              in = fgetc(stream);
+              in = this->getch();
             }
         }
 
@@ -165,35 +282,36 @@ aJsonClass::parseNumber(aJsonObject *item, FILE* stream)
       item->type = aJson_Float;
     }
   //preserve the last character for the next routine
-  ungetc(in, stream);
+  this->ungetch(in);
   return 0;
 }
 
 // Render the number nicely from the given item into a string.
 int
-aJsonClass::printInt(aJsonObject *item, FILE* stream)
+aJsonStream::printInt(aJsonObject *item)
 {
   if (item != NULL)
     {
-      return fprintf_P(stream, PSTR("%d"), item->valueint);
+      return this->print(item->valueint, DEC);
     }
   //printing nothing is ok
   return 0;
 }
 
 int
-aJsonClass::printFloat(aJsonObject *item, FILE* stream)
+aJsonStream::printFloat(aJsonObject *item)
 {
   if (item != NULL)
     {
       double d = item->valuefloat;
       if (d<0.0) {
-          fprintf_P(stream,PSTR("-"));
+	  this->print("-");
           d=-d;
       }
       //print the integer part
       unsigned long integer_number = (unsigned long)d;
-      fprintf_P(stream,PSTR("%u."),integer_number);
+      this->print(integer_number, DEC);
+      this->print(".");
       //print the fractional part
       double fractional_part = d - ((double)integer_number);
       //we do a do-while since we want to print at least one zero
@@ -206,7 +324,7 @@ aJsonClass::printFloat(aJsonObject *item, FILE* stream)
           //create an int out of it
           unsigned int digit = (unsigned int) fractional_part;
           //print it
-          fprintf_P(stream,PSTR("%u"),digit);
+	  this->print(digit, DEC);
           //remove it from the number
           fractional_part -= (double)digit;
           n--;
@@ -218,10 +336,10 @@ aJsonClass::printFloat(aJsonObject *item, FILE* stream)
 
 // Parse the input text into an unescaped cstring, and populate item.
 int
-aJsonClass::parseString(aJsonObject *item, FILE* stream)
+aJsonStream::parseString(aJsonObject *item)
 {
   //we do not need to skip here since the first byte should be '\"'
-  int in = fgetc(stream);
+  int in = this->getch();
   if (in != '\"')
     {
       return EOF; // not a string!
@@ -234,7 +352,7 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
       //unable to allocate the string
       return EOF;
     }
-  in = fgetc(stream);
+  in = this->getch();
   if (in == EOF)
     {
       stringBufferFree(buffer);
@@ -250,7 +368,7 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
             }
           else
             {
-              in = fgetc(stream);
+              in = this->getch();
               if (in == EOF)
                 {
                   stringBufferFree(buffer);
@@ -284,7 +402,7 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
                 break;
                 }
             }
-          in = fgetc(stream);
+          in = this->getch();
           if (in == EOF)
             {
               stringBufferFree(buffer);
@@ -301,12 +419,9 @@ aJsonClass::parseString(aJsonObject *item, FILE* stream)
 
 // Render the cstring provided to an escaped version that can be printed.
 int
-aJsonClass::printStringPtr(const char *str, FILE* stream)
+aJsonStream::printStringPtr(const char *str)
 {
-  if (fputc('\"', stream) == EOF)
-    {
-      return EOF;
-    }
+  this->print("\"");
   char* ptr = (char*) str;
   if (ptr != NULL)
     {
@@ -314,61 +429,34 @@ aJsonClass::printStringPtr(const char *str, FILE* stream)
         {
           if ((unsigned char) *ptr > 31 && *ptr != '\"' && *ptr != '\\')
             {
-              if (fputc(*ptr, stream) == EOF)
-                {
-                  return EOF;
-                }
+	      this->print(*ptr);
               ptr++;
             }
           else
             {
-              if (fputc('\\', stream) == EOF)
-                {
-                  return EOF;
-                }
+	      this->print('\\');
               switch (*ptr++)
                 {
               case '\\':
-                if (fputc('\\', stream) == EOF)
-                  {
-                    return EOF;
-                  }
+		this->print('\\');
                 break;
               case '\"':
-                if (fputc('\"', stream) == EOF)
-                  {
-                    return EOF;
-                  }
+		this->print('\"');
                 break;
               case '\b':
-                if (fputc('b', stream) == EOF)
-                  {
-                    return EOF;
-                  }
+		this->print('b');
                 break;
               case '\f':
-                if (fputc('f', stream) == EOF)
-                  {
-                    return EOF;
-                  }
+		this->print('f');
                 break;
               case '\n':
-                if (fputc('n', stream) == EOF)
-                  {
-                    return EOF;
-                  }
+		this->print('n');
                 break;
               case '\r':
-                if (fputc('r', stream) == EOF)
-                  {
-                    return EOF;
-                  }
+		this->print('r');
                 break;
               case '\t':
-                if (fputc('t', stream) == EOF)
-                  {
-                    return EOF;
-                  }
+		this->print('t');
                 break;
               default:
                 break; // eviscerate with prejudice.
@@ -377,39 +465,29 @@ aJsonClass::printStringPtr(const char *str, FILE* stream)
 
         }
     }
-  if (fputc('\"', stream) == EOF)
-    {
-      return EOF;
-    }
+  this->print('\"');
   return 0;
 }
 
 // Invote print_string_ptr (which is useful) on an item.
 int
-aJsonClass::printString(aJsonObject *item, FILE* stream)
+aJsonStream::printString(aJsonObject *item)
 {
-  return printStringPtr(item->valuestring, stream);
+  return this->printStringPtr(item->valuestring);
 }
 
 // Utility to jump whitespace and cr/lf
 int
-aJsonClass::skip(FILE* stream)
+aJsonStream::skip()
 {
-  if (stream == NULL)
-    {
-      return EOF;
-    }
-  int in = fgetc(stream);
+  int in = this->getch();
   while (in != EOF && (in <= 32))
     {
-      in = fgetc(stream);
+      in = this->getch();
     }
   if (in != EOF)
     {
-      if (ungetc(in, stream) == EOF)
-        {
-          return EOF;
-        }
+      this->ungetch(in);
       return 0;
     }
   return EOF;
@@ -419,22 +497,21 @@ aJsonClass::skip(FILE* stream)
 aJsonObject*
 aJsonClass::parse(char *value)
 {
-  FILE* string_input_stream = openStringInputStream(value);
-  aJsonObject* result = parse(string_input_stream, NULL);
-  closeStringInputStream(string_input_stream);
+  aJsonStringStream stringStream(value, NULL);
+  aJsonObject* result = parse(&stringStream);
   return result;
 }
 
 // Parse an object - create a new root, and populate.
 aJsonObject*
-aJsonClass::parse(FILE* stream)
+aJsonClass::parse(aJsonStream* stream)
 {
   return parse(stream, NULL);
 }
 
 // Parse an object - create a new root, and populate.
 aJsonObject*
-aJsonClass::parse(FILE* stream, char** filter)
+aJsonClass::parse(aJsonStream* stream, char** filter)
 {
   if (stream == NULL)
     {
@@ -444,8 +521,8 @@ aJsonClass::parse(FILE* stream, char** filter)
   if (!c)
     return NULL; /* memory fail */
 
-  skip(stream);
-  if (parseValue(c, stream, filter) == EOF)
+  stream->skip();
+  if (stream->parseValue(c, filter) == EOF)
     {
       deleteItem(c);
       return NULL;
@@ -455,60 +532,54 @@ aJsonClass::parse(FILE* stream, char** filter)
 
 // Render a aJsonObject item/entity/structure to text.
 int
-aJsonClass::print(aJsonObject* item, FILE* stream)
+aJsonClass::print(aJsonObject* item, aJsonStream* stream)
 {
-  return printValue(item, stream);
+  return stream->printValue(item);
 }
 
 char*
 aJsonClass::print(aJsonObject* item)
 {
-  FILE* stream = openStringOutputStream();
-  if (stream == NULL)
+  char* outBuf = (char*) malloc(256); /* XXX: Dynamic size. */
+  if (outBuf == NULL)
     {
       return NULL;
     }
-  print(item, stream);
-  return closeStringOutputStream(stream);
+  aJsonStringStream stringStream(NULL, outBuf, 256);
+  print(item, &stringStream);
+  return outBuf;
 }
 
 // Parser core - when encountering text, process appropriately.
 int
-aJsonClass::parseValue(aJsonObject *item, FILE* stream, char** filter)
+aJsonStream::parseValue(aJsonObject *item, char** filter)
 {
-  if (stream == NULL)
-    {
-      return EOF; // Fail on null.
-    }
-  if (skip(stream) == EOF)
+  if (this->skip() == EOF)
     {
       return EOF;
     }
   //read the first byte from the stream
-  int in = fgetc(stream);
+  int in = this->getch();
   if (in == EOF)
     {
       return EOF;
     }
-  if (ungetc(in, stream) == EOF)
-    {
-      return EOF;
-    }
+  this->ungetch(in);
   if (in == '\"')
     {
-      return parseString(item, stream);
+      return this->parseString(item);
     }
   else if (in == '-' || (in >= '0' && in <= '9'))
     {
-      return parseNumber(item, stream);
+      return this->parseNumber(item);
     }
   else if (in == '[')
     {
-      return parseArray(item, stream, filter);
+      return this->parseArray(item, filter);
     }
   else if (in == '{')
     {
-      return parseObject(item, stream, filter);
+      return this->parseObject(item, filter);
     }
   //it can only be null, false or true
   else if (in == 'n')
@@ -516,7 +587,7 @@ aJsonClass::parseValue(aJsonObject *item, FILE* stream, char** filter)
       //a buffer to read the value
       char buffer[] =
         { 0, 0, 0, 0 };
-      if (fread(buffer, sizeof(char), 4, stream) != 4)
+      if (this->readBytes((uint8_t*) buffer, 4) != 4)
         {
           return EOF;
         }
@@ -535,7 +606,7 @@ aJsonClass::parseValue(aJsonObject *item, FILE* stream, char** filter)
       //a buffer to read the value
       char buffer[] =
         { 0, 0, 0, 0, 0 };
-      if (fread(buffer, sizeof(char), 5, stream) != 5)
+      if (this->readBytes((uint8_t*) buffer, 5) != 5)
         {
           return EOF;
         }
@@ -551,7 +622,7 @@ aJsonClass::parseValue(aJsonObject *item, FILE* stream, char** filter)
       //a buffer to read the value
       char buffer[] =
         { 0, 0, 0, 0 };
-      if (fread(buffer, sizeof(char), 4, stream) != 4)
+      if (this->readBytes((uint8_t*) buffer, 4) != 4)
         {
           return EOF;
         }
@@ -568,7 +639,7 @@ aJsonClass::parseValue(aJsonObject *item, FILE* stream, char** filter)
 
 // Render a value to text.
 int
-aJsonClass::printValue(aJsonObject *item, FILE* stream)
+aJsonStream::printValue(aJsonObject *item)
 {
   int result = 0;
   if (item == NULL)
@@ -579,60 +650,58 @@ aJsonClass::printValue(aJsonObject *item, FILE* stream)
   switch (item->type)
     {
   case aJson_NULL:
-    result = fprintf_P(stream, PSTR("null"));
+    result = this->print("null");
     break;
   case aJson_False:
-    result = fprintf_P(stream, PSTR("false"));
+    result = this->print("false");
     break;
   case aJson_True:
-    result = fprintf_P(stream, PSTR("true"));
+    result = this->print("true");
     break;
   case aJson_Int:
-    result = printInt(item, stream);
+    result = this->printInt(item);
     break;
   case aJson_Float:
-    result = printFloat(item, stream);
+    result = this->printFloat(item);
     break;
   case aJson_String:
-    result = printString(item, stream);
+    result = this->printString(item);
     break;
   case aJson_Array:
-    result = printArray(item, stream);
+    result = this->printArray(item);
     break;
   case aJson_Object:
-    result = printObject(item, stream);
+    result = this->printObject(item);
     break;
     }
-  //good time to flush the stream
-  fflush(stream);
   return result;
 }
 
 // Build an array from input text.
 int
-aJsonClass::parseArray(aJsonObject *item, FILE* stream, char** filter)
+aJsonStream::parseArray(aJsonObject *item, char** filter)
 {
-  int in = fgetc(stream);
+  int in = this->getch();
   if (in != '[')
     {
       return EOF; // not an array!
     }
 
   item->type = aJson_Array;
-  skip(stream);
-  in = fgetc(stream);
+  this->skip();
+  in = this->getch();
   //check for empty array
   if (in == ']')
     {
       return 0; // empty array.
     }
   //now put back the last character
-  ungetc(in, stream);
+  this->ungetch(in);
   aJsonObject *child;
   char first = -1;
   while ((first) || (in == ','))
     {
-      aJsonObject *new_item = newItem();
+      aJsonObject *new_item = aJsonClass::newItem();
       if (new_item == NULL)
         {
           return EOF; // memory fail
@@ -648,13 +717,13 @@ aJsonClass::parseArray(aJsonObject *item, FILE* stream, char** filter)
           new_item->prev = child;
         }
       child = new_item;
-      skip(stream);
-      if (parseValue(child, stream, filter))
+      this->skip();
+      if (this->parseValue(child, filter))
         {
           return EOF;
         }
-      skip(stream);
-      in = fgetc(stream);
+      this->skip();
+      in = this->getch();
     }
   if (in == ']')
     {
@@ -668,7 +737,7 @@ aJsonClass::parseArray(aJsonObject *item, FILE* stream, char** filter)
 
 // Render an array to text
 int
-aJsonClass::printArray(aJsonObject *item, FILE* stream)
+aJsonStream::printArray(aJsonObject *item)
 {
   if (item == NULL)
     {
@@ -676,26 +745,26 @@ aJsonClass::printArray(aJsonObject *item, FILE* stream)
       return 0;
     }
   aJsonObject *child = item->child;
-  if (fputc('[', stream) == EOF)
+  if (this->print('[') == EOF)
     {
       return EOF;
     }
   while (child)
     {
-      if (printValue(child, stream) == EOF)
+      if (this->printValue(child) == EOF)
         {
           return EOF;
         }
       child = child->next;
       if (child)
         {
-          if (fputc(',', stream) == EOF)
+          if (this->print(',') == EOF)
             {
               return EOF;
             }
         }
     }
-  if (fputc(']', stream) == EOF)
+  if (this->print(']') == EOF)
     {
       return EOF;
     }
@@ -704,31 +773,30 @@ aJsonClass::printArray(aJsonObject *item, FILE* stream)
 
 // Build an object from the text.
 int
-aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
+aJsonStream::parseObject(aJsonObject *item, char** filter)
 {
-  int in = fgetc(stream);
+  int in = this->getch();
   if (in != '{')
     {
       return EOF; // not an object!
     }
 
   item->type = aJson_Object;
-  skip(stream);
+  this->skip();
   //check for an empty object
-  in = fgetc(stream);
+  in = this->getch();
   if (in == '}')
     {
       return 0; // empty object.
     }
   //preserve the char for the next parser
-  ungetc(in, stream);
+  this->ungetch(in);
 
   aJsonObject* child;
   char first = -1;
   while ((first) || (in == ','))
     {
-      //in = fgetc(stream);
-      aJsonObject* new_item = newItem();
+      aJsonObject* new_item = aJsonClass::newItem();
       if (new_item == NULL)
         {
           return EOF; // memory fail
@@ -744,28 +812,28 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
           new_item->prev = child;
         }
       child = new_item;
-      skip(stream);
-      if (parseString(child, stream) == EOF)
+      this->skip();
+      if (this->parseString(child) == EOF)
         {
           return EOF;
         }
-      skip(stream);
+      this->skip();
       child->name = child->valuestring;
       child->valuestring = NULL;
 
-      in = fgetc(stream);
+      in = this->getch();
       if (in != ':')
         {
           return EOF; // fail!
         }
       // skip any spacing, get the value.
-      skip(stream);
-      if (parseValue(child, stream, filter) == EOF)
+      this->skip();
+      if (this->parseValue(child, filter) == EOF)
         {
           return EOF;
         }
-      skip(stream);
-      in = fgetc(stream);
+      this->skip();
+      in = this->getch();
     }
 
   if (in == '}')
@@ -780,7 +848,7 @@ aJsonClass::parseObject(aJsonObject *item, FILE* stream, char** filter)
 
 // Render an object to text.
 int
-aJsonClass::printObject(aJsonObject *item, FILE* stream)
+aJsonStream::printObject(aJsonObject *item)
 {
   if (item == NULL)
     {
@@ -788,34 +856,34 @@ aJsonClass::printObject(aJsonObject *item, FILE* stream)
       return 0;
     }
   aJsonObject *child = item->child;
-  if (fputc('{', stream) == EOF)
+  if (this->print('{') == EOF)
     {
       return EOF;
     }
   while (child)
     {
-      if (printStringPtr(child->name, stream) == EOF)
+      if (this->printStringPtr(child->name) == EOF)
         {
           return EOF;
         }
-      if (fputc(':', stream) == EOF)
+      if (this->print(':') == EOF)
         {
           return EOF;
         }
-      if (printValue(child, stream) == EOF)
+      if (this->printValue(child) == EOF)
         {
           return EOF;
         }
       child = child->next;
       if (child)
         {
-          if (fputc(',', stream) == EOF)
+          if (this->print(',') == EOF)
             {
               return EOF;
             }
         }
     }
-  if (fputc('}', stream) == EOF)
+  if (this->print('}') == EOF)
     {
       return EOF;
     }
