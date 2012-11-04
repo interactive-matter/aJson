@@ -25,11 +25,9 @@
 #ifndef aJson__h
 #define aJson__h
 
-/******************************************************************************
- * Includes
- ******************************************************************************/
-#include <stdio.h>
-
+#include <Print.h>
+#include <Stream.h>
+#include <Client.h>
 
 /******************************************************************************
  * Definitions
@@ -45,6 +43,10 @@
 #define aJson_Object 7
 
 #define aJson_IsReference 128
+
+#ifndef EOF
+#define EOF -1
+#endif
 
 // The aJson structure:
 typedef struct aJsonObject {
@@ -62,6 +64,106 @@ typedef struct aJsonObject {
 	};
 } aJsonObject;
 
+/* aJsonStream is stream representation of aJson for its internal use;
+ * it is meant to abstract out differences between Stream (e.g. serial
+ * stream) and Client (which may or may not be connected) or provide even
+ * stream-ish interface to string buffers. */
+class aJsonStream : public Print {
+public:
+	aJsonStream(Stream *stream_)
+		: stream_obj(stream_), bucket(EOF)
+		{}
+	/* Use this to check if more data is available, as aJsonStream
+	 * can read some more data than really consumed and automatically
+	 * skips separating whitespace if you use this method. */
+	virtual bool available();
+
+	int parseNumber(aJsonObject *item);
+	int printInt(aJsonObject *item);
+	int printFloat(aJsonObject *item);
+
+	int parseString(aJsonObject *item);
+	int printStringPtr(const char *str);
+	int printString(aJsonObject *item);
+
+	int skip();
+
+	int parseValue(aJsonObject *item, char** filter);
+	int printValue(aJsonObject *item);
+
+	int parseArray(aJsonObject *item, char** filter);
+	int printArray(aJsonObject *item);
+
+	int parseObject(aJsonObject *item, char** filter);
+	int printObject(aJsonObject *item);
+
+protected:
+	/* Blocking load of character, returning EOF if the stream
+	 * is exhausted. */
+	/* Base implementation just looks at bucket, returns EOF
+	 * otherwise; descendats take care of the real reading. */
+	virtual int getch();
+	virtual size_t readBytes(uint8_t *buffer, size_t len);
+	/* Return the character back to the front of the stream
+	 * after loading it with getch(). Only returning a single
+	 * character is supported. */
+	virtual void ungetch(char ch);
+
+	/* Inherited from class Print. */
+	virtual size_t write(uint8_t ch);
+
+	/* stream attribute is used only from virtual functions,
+	 * therefore an object inheriting aJsonStream may avoid
+	 * using streams completely. */
+	Stream *stream_obj;
+	/* Use this accessor for stream retrieval; some subclasses
+	 * may use their own stream subclass. */
+	virtual inline Stream *stream() { return stream_obj; }
+
+	/* bucket is EOF by default. Otherwise, it is a character
+	 * to be returned by next getch() - returned by a call
+	 * to ungetch(). */
+	int bucket;
+};
+
+/* JSON stream that consumes data from a connection (usually
+ * Ethernet client) until the connection is closed. */
+class aJsonClientStream : public aJsonStream {
+public:
+	aJsonClientStream(Client *stream_)
+		: aJsonStream(NULL), client_obj(stream_)
+		{}
+
+private:
+	virtual int getch();
+
+	Client *client_obj;
+	virtual inline Client *stream() { return client_obj; }
+};
+
+/* JSON stream that is bound to input and output string buffer. This is
+ * for internal usage by string-based aJsonClass methods. */
+/* TODO: Elastic output buffer support. */
+class aJsonStringStream : public aJsonStream {
+public:
+	/* Either of inbuf, outbuf can be NULL if you do not care about
+	 * particular I/O direction. */
+	aJsonStringStream(char *inbuf_, char *outbuf_ = NULL, size_t outbuf_len_ = 0)
+		: aJsonStream(NULL), inbuf(inbuf_), outbuf(outbuf_), outbuf_len(outbuf_len_)
+	{
+		inbuf_len = inbuf ? strlen(inbuf) : 0;
+	}
+
+	virtual bool available();
+
+private:
+	virtual int getch();
+	virtual size_t write(uint8_t ch);
+
+	char *inbuf, *outbuf;
+	size_t inbuf_len, outbuf_len;
+};
+
 class aJsonClass {
 	/******************************************************************************
 	 * Constructors
@@ -72,14 +174,14 @@ class aJsonClass {
 	 ******************************************************************************/
 public:
 	// Supply a block of JSON, and this returns a aJson object you can interrogate. Call aJson.deleteItem when finished.
-        aJsonObject* parse(FILE* stream); //Reads from a stream
-        aJsonObject* parse(FILE* stream,char** filter_values); //Read from a file, but only return values include in the char* array filter_values
+        aJsonObject* parse(aJsonStream* stream); //Reads from a stream
+        aJsonObject* parse(aJsonStream* stream,char** filter_values); //Read from a file, but only return values include in the char* array filter_values
 	aJsonObject* parse(char *value); //Reads from a string
 	// Render a aJsonObject entity to text for transfer/storage. Free the char* when finished.
-	int print(aJsonObject *item, FILE* stream);
+	int print(aJsonObject *item, aJsonStream* stream);
 	char* print(aJsonObject* item);
 	//Renders a aJsonObject directly to a output stream
-	char stream(aJsonObject *item, FILE* stream);
+	char stream(aJsonObject *item, aJsonStream* stream);
 	// Delete a aJsonObject entity and all sub-entities.
 	void deleteItem(aJsonObject *c);
 
@@ -136,30 +238,14 @@ public:
 	void addStringToObject(aJsonObject* object, const char* name,
 					const char* s);
 
+protected:
+	friend aJsonStream;
+	static aJsonObject* newItem();
+
 private:
-	aJsonObject* newItem();
-	int parseNumber(aJsonObject *item, FILE* stream);
-	int printInt(aJsonObject *item, FILE* stream);
-	int printFloat(aJsonObject *item, FILE* stream);
-
-	int parseString(aJsonObject *item, FILE* stream);
-	int printStringPtr(const char *str, FILE* stream);
-	int printString(aJsonObject *item, FILE* stream);
-
-	int skip(FILE* stream);
-
-	int parseValue(aJsonObject *item, FILE* stream, char** filter);
-	int printValue(aJsonObject *item, FILE* stream);
-
-	int parseArray(aJsonObject *item, FILE* stream, char** filter);
-	int printArray(aJsonObject *item, FILE* stream);
-
-	int parseObject(aJsonObject *item, FILE* stream, char** filter);
-	int printObject(aJsonObject *item, FILE* stream);
 	void suffixObject(aJsonObject *prev, aJsonObject *item);
 
 	aJsonObject* createReference(aJsonObject *item);
-
 };
 
 extern aJsonClass aJson;
