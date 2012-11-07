@@ -239,7 +239,7 @@ public:
 					const char* s);
 
 protected:
-	friend aJsonStream;
+	friend class aJsonStream;
 	static aJsonObject* newItem();
 
 private:
