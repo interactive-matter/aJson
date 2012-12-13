@@ -111,7 +111,7 @@ To render the object back to a string you can simply call
 Finished? Delete the root (this takes care of everything else).
 
 ```c
- aJson.delete(root);
+ aJson.deleteItem(root);
 ```
 
 This deletes the objects and all values referenced by it.
