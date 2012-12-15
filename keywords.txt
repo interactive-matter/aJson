@@ -11,6 +11,8 @@
 aJson	KEYWORD1
 aJsonObject	KEYWORD1
 aJsonStream	KEYWORD1
+aJsonClientStream	KEYWORD1
+aJsonStringStream	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
