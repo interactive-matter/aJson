@@ -28,6 +28,7 @@
 #include <Print.h>
 #include <Stream.h>
 #include <Client.h>
+#include <Arduino.h>  // To get access to the Arduino millis() function
 
 /******************************************************************************
  * Definitions
@@ -87,6 +88,7 @@ public:
 	int printString(aJsonObject *item);
 
 	int skip();
+	int flush();
 
 	int parseValue(aJsonObject *item, char** filter);
 	int printValue(aJsonObject *item);

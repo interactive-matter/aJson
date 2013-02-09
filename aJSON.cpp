@@ -78,7 +78,12 @@ aJsonStream::getch()
       bucket = EOF;
       return ret;
     }
-  while (!stream()->available()) /* spin */;
+  // In case input was malformed - can happen, this is the
+  // real world, we can end up in a situation where the parser
+  // would expect another character and end up stuck on
+  // stream()->available() forever, hence the 500ms timeout.
+  unsigned long i= millis()+500;
+  while ((!stream()->available()) && (millis() < i)) /* spin with a timeout*/;
   return stream()->read();
 }
 
@@ -492,6 +497,21 @@ aJsonStream::skip()
     }
   return EOF;
 }
+
+// Utility to flush our buffer in case it contains garbage
+// since the parser will return the buffer untouched if it
+// cannot understand it.
+int
+aJsonStream::flush()
+{
+  int in = this->getch();
+  while(in != EOF)
+  {
+    in = this->getch();
+  }
+  return EOF;
+}
+
 
 // Parse an object - create a new root, and populate.
 aJsonObject*
