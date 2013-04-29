@@ -387,6 +387,9 @@ aJsonStream::parseString(aJsonObject *item)
               case '\"':
                 stringBufferAdd('\"', buffer);
                 break;
+              case '/':
+                stringBufferAdd('/', buffer);
+                break;
               case 'b':
                 stringBufferAdd('\b', buffer);
                 break;
@@ -447,6 +450,9 @@ aJsonStream::printStringPtr(const char *str)
                 break;
               case '\"':
 		this->print('\"');
+                break;
+              case '/':
+		this->print('/');
                 break;
               case '\b':
 		this->print('b');
