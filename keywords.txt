@@ -22,7 +22,7 @@ parse	KEYWORD2
 print	KEYWORD2
 deleteItem	KEYWORD2
 getArraySize	KEYWORD2
-getArraySize	KEYWORD2
+getArrayItem	KEYWORD2
 getObjectItem	KEYWORD2
 createNull	KEYWORD2
 createTrue	KEYWORD2
