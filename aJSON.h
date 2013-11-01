@@ -240,6 +240,11 @@ public:
 	void addStringToObject(aJsonObject* object, const char* name,
 					const char* s);
 
+	//Mods by DarkDruiD and Azrrael-exe
+
+	int* getIntArray(aJsonObject* object);
+	float* getFloatArray(aJsonObject* object);
+
 protected:
 	friend class aJsonStream;
 	static aJsonObject* newItem();

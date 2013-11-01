@@ -1283,6 +1283,29 @@ aJsonClass::addStringToObject(aJsonObject* object, const char* name,
   addItemToObject(object, name, createItem(s));
 }
 
+// Mods Added by Darkdruid and Azrrael-exe
+
+int* aJsonClass::getIntArray(aJsonObject* object)
+{
+  int* out=(int*)malloc(aJson.getArraySize(object));
+  for(int i=0;i<aJson.getArraySize(object);i++)
+  {
+    out[i]=(aJson.getArrayItem(object,i)->valueint);
+  } 
+  return out;
+}
+
+float* aJsonClass::getFloatArray(aJsonObject* object)
+{
+  float* out=(float*)malloc(aJson.getArraySize(object));
+  for(int i=0;i<aJson.getArraySize(object);i++)
+  {
+    out[i]=(aJson.getArrayItem(object,i)->valuefloat);
+  } 
+  return out;
+}
+
+
 //TODO conversion routines btw. float & int types?
 
 aJsonClass aJson;
