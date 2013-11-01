@@ -50,9 +50,11 @@
 //how much digits after . for float
 #define FLOAT_PRECISION 5
 
+//******************************************
+// Public Funtions for the Class aJsonStream
+//******************************************
 
-bool
-aJsonStream::available()
+bool aJsonStream::available()
 {
   if (bucket != EOF)
     return true;
@@ -69,147 +71,8 @@ aJsonStream::available()
   return false;
 }
 
-int
-aJsonStream::getch()
-{
-  if (bucket != EOF)
-    {
-      int ret = bucket;
-      bucket = EOF;
-      return ret;
-    }
-  // In case input was malformed - can happen, this is the
-  // real world, we can end up in a situation where the parser
-  // would expect another character and end up stuck on
-  // stream()->available() forever, hence the 500ms timeout.
-  unsigned long i= millis()+500;
-  while ((!stream()->available()) && (millis() < i)) /* spin with a timeout*/;
-  return stream()->read();
-}
-
-void
-aJsonStream::ungetch(char ch)
-{
-  bucket = ch;
-}
-
-size_t
-aJsonStream::write(uint8_t ch)
-{
-  return stream()->write(ch);
-}
-
-size_t
-aJsonStream::readBytes(uint8_t *buffer, size_t len)
-{
-  for (size_t i = 0; i < len; i++)
-    {
-      int ch = this->getch();
-      if (ch == EOF)
-	{
-	  return i;
-	}
-      buffer[i] = ch;
-    }
-  return len;
-}
-
-
-int
-aJsonClientStream::getch()
-{
-  if (bucket != EOF)
-    {
-      int ret = bucket;
-      bucket = EOF;
-      return ret;
-    }
-  while (!stream()->available() && stream()->connected()) /* spin */;
-  if (!stream()->connected())
-    {
-      stream()->stop();
-      return EOF;
-    }
-  return stream()->read();
-}
-
-bool
-aJsonStringStream::available()
-{
-  if (bucket != EOF)
-    return true;
-  return inbuf_len > 0;
-}
-
-int
-aJsonStringStream::getch()
-{
-  if (bucket != EOF)
-    {
-      int ret = bucket;
-      bucket = EOF;
-      return ret;
-    }
-  if (!inbuf || !inbuf_len)
-    {
-      return EOF;
-    }
-  char ch = *inbuf++;
-  inbuf_len--;
-  return ch;
-}
-
-size_t
-aJsonStringStream::write(uint8_t ch)
-{
-  if (!outbuf || outbuf_len <= 1)
-    {
-      return 0;
-    }
-  *outbuf++ = ch; outbuf_len--;
-  *outbuf = 0;
-  return 1;
-}
-
-
-// Internal constructor.
-aJsonObject*
-aJsonClass::newItem()
-{
-  aJsonObject* node = (aJsonObject*) malloc(sizeof(aJsonObject));
-  if (node)
-    memset(node, 0, sizeof(aJsonObject));
-  return node;
-}
-
-// Delete a aJsonObject structure.
-void
-aJsonClass::deleteItem(aJsonObject *c)
-{
-  aJsonObject *next;
-  while (c)
-    {
-      next = c->next;
-      if (!(c->type & aJson_IsReference) && c->child)
-        {
-          deleteItem(c->child);
-        }
-      if ((c->type == aJson_String) && c->valuestring)
-        {
-          free(c->valuestring);
-        }
-      if (c->name)
-        {
-          free(c->name);
-        }
-      free(c);
-      c = next;
-    }
-}
-
 // Parse the input text to generate a number, and populate the result into item.
-int
-aJsonStream::parseNumber(aJsonObject *item)
+int aJsonStream::parseNumber(aJsonObject *item)
 {
   int i = 0;
   char sign = 1;
@@ -292,8 +155,7 @@ aJsonStream::parseNumber(aJsonObject *item)
 }
 
 // Render the number nicely from the given item into a string.
-int
-aJsonStream::printInt(aJsonObject *item)
+int aJsonStream::printInt(aJsonObject *item)
 {
   if (item != NULL)
     {
@@ -303,14 +165,13 @@ aJsonStream::printInt(aJsonObject *item)
   return 0;
 }
 
-int
-aJsonStream::printFloat(aJsonObject *item)
+int aJsonStream::printFloat(aJsonObject *item)
 {
   if (item != NULL)
     {
       double d = item->valuefloat;
       if (d<0.0) {
-	  this->print("-");
+    this->print("-");
           d=-d;
       }
       //print the integer part
@@ -329,7 +190,7 @@ aJsonStream::printFloat(aJsonObject *item)
           //create an int out of it
           unsigned int digit = (unsigned int) fractional_part;
           //print it
-	  this->print(digit, DEC);
+    this->print(digit, DEC);
           //remove it from the number
           fractional_part -= (double)digit;
           n--;
@@ -340,8 +201,7 @@ aJsonStream::printFloat(aJsonObject *item)
 }
 
 // Parse the input text into an unescaped cstring, and populate item.
-int
-aJsonStream::parseString(aJsonObject *item)
+int aJsonStream::parseString(aJsonObject *item)
 {
   //we do not need to skip here since the first byte should be '\"'
   int in = this->getch();
@@ -426,8 +286,7 @@ aJsonStream::parseString(aJsonObject *item)
 }
 
 // Render the cstring provided to an escaped version that can be printed.
-int
-aJsonStream::printStringPtr(const char *str)
+int aJsonStream::printStringPtr(const char *str)
 {
   this->print("\"");
   char* ptr = (char*) str;
@@ -437,37 +296,37 @@ aJsonStream::printStringPtr(const char *str)
         {
           if ((unsigned char) *ptr > 31 && *ptr != '\"' && *ptr != '\\')
             {
-	      this->print(*ptr);
+        this->print(*ptr);
               ptr++;
             }
           else
             {
-	      this->print('\\');
+        this->print('\\');
               switch (*ptr++)
                 {
               case '\\':
-		this->print('\\');
+    this->print('\\');
                 break;
               case '\"':
-		this->print('\"');
+    this->print('\"');
                 break;
               case '/':
-		this->print('/');
+    this->print('/');
                 break;
               case '\b':
-		this->print('b');
+    this->print('b');
                 break;
               case '\f':
-		this->print('f');
+    this->print('f');
                 break;
               case '\n':
-		this->print('n');
+    this->print('n');
                 break;
               case '\r':
-		this->print('r');
+    this->print('r');
                 break;
               case '\t':
-		this->print('t');
+    this->print('t');
                 break;
               default:
                 break; // eviscerate with prejudice.
@@ -481,15 +340,13 @@ aJsonStream::printStringPtr(const char *str)
 }
 
 // Invote print_string_ptr (which is useful) on an item.
-int
-aJsonStream::printString(aJsonObject *item)
+int aJsonStream::printString(aJsonObject *item)
 {
   return this->printStringPtr(item->valuestring);
 }
 
 // Utility to jump whitespace and cr/lf
-int
-aJsonStream::skip()
+int aJsonStream::skip()
 {
   int in = this->getch();
   while (in != EOF && (in <= 32))
@@ -507,8 +364,7 @@ aJsonStream::skip()
 // Utility to flush our buffer in case it contains garbage
 // since the parser will return the buffer untouched if it
 // cannot understand it.
-int
-aJsonStream::flush()
+int aJsonStream::flush()
 {
   int in = this->getch();
   while(in != EOF)
@@ -518,67 +374,8 @@ aJsonStream::flush()
   return EOF;
 }
 
-
-// Parse an object - create a new root, and populate.
-aJsonObject*
-aJsonClass::parse(char *value)
-{
-  aJsonStringStream stringStream(value, NULL);
-  aJsonObject* result = parse(&stringStream);
-  return result;
-}
-
-// Parse an object - create a new root, and populate.
-aJsonObject*
-aJsonClass::parse(aJsonStream* stream)
-{
-  return parse(stream, NULL);
-}
-
-// Parse an object - create a new root, and populate.
-aJsonObject*
-aJsonClass::parse(aJsonStream* stream, char** filter)
-{
-  if (stream == NULL)
-    {
-      return NULL;
-    }
-  aJsonObject *c = newItem();
-  if (!c)
-    return NULL; /* memory fail */
-
-  stream->skip();
-  if (stream->parseValue(c, filter) == EOF)
-    {
-      deleteItem(c);
-      return NULL;
-    }
-  return c;
-}
-
-// Render a aJsonObject item/entity/structure to text.
-int
-aJsonClass::print(aJsonObject* item, aJsonStream* stream)
-{
-  return stream->printValue(item);
-}
-
-char*
-aJsonClass::print(aJsonObject* item)
-{
-  char* outBuf = (char*) malloc(256); /* XXX: Dynamic size. */
-  if (outBuf == NULL)
-    {
-      return NULL;
-    }
-  aJsonStringStream stringStream(NULL, outBuf, 256);
-  print(item, &stringStream);
-  return outBuf;
-}
-
 // Parser core - when encountering text, process appropriately.
-int
-aJsonStream::parseValue(aJsonObject *item, char** filter)
+int aJsonStream::parseValue(aJsonObject *item, char** filter)
 {
   if (this->skip() == EOF)
     {
@@ -664,8 +461,7 @@ aJsonStream::parseValue(aJsonObject *item, char** filter)
 }
 
 // Render a value to text.
-int
-aJsonStream::printValue(aJsonObject *item)
+int aJsonStream::printValue(aJsonObject *item)
 {
   int result = 0;
   if (item == NULL)
@@ -704,8 +500,7 @@ aJsonStream::printValue(aJsonObject *item)
 }
 
 // Build an array from input text.
-int
-aJsonStream::parseArray(aJsonObject *item, char** filter)
+int aJsonStream::parseArray(aJsonObject *item, char** filter)
 {
   int in = this->getch();
   if (in != '[')
@@ -762,8 +557,7 @@ aJsonStream::parseArray(aJsonObject *item, char** filter)
 }
 
 // Render an array to text
-int
-aJsonStream::printArray(aJsonObject *item)
+int aJsonStream::printArray(aJsonObject *item)
 {
   if (item == NULL)
     {
@@ -798,8 +592,7 @@ aJsonStream::printArray(aJsonObject *item)
 }
 
 // Build an object from the text.
-int
-aJsonStream::parseObject(aJsonObject *item, char** filter)
+int aJsonStream::parseObject(aJsonObject *item, char** filter)
 {
   int in = this->getch();
   if (in != '{')
@@ -873,8 +666,7 @@ aJsonStream::parseObject(aJsonObject *item, char** filter)
 }
 
 // Render an object to text.
-int
-aJsonStream::printObject(aJsonObject *item)
+int aJsonStream::printObject(aJsonObject *item)
 {
   if (item == NULL)
     {
@@ -916,9 +708,204 @@ aJsonStream::printObject(aJsonObject *item)
   return 0;
 }
 
+//**********************************************
+// Protected Funtions for the Class aJsonStream
+//**********************************************
+
+int aJsonStream::getch()
+{
+  if (bucket != EOF)
+    {
+      int ret = bucket;
+      bucket = EOF;
+      return ret;
+    }
+  // In case input was malformed - can happen, this is the
+  // real world, we can end up in a situation where the parser
+  // would expect another character and end up stuck on
+  // stream()->available() forever, hence the 500ms timeout.
+  unsigned long i= millis()+500;
+  while ((!stream()->available()) && (millis() < i)) /* spin with a timeout*/;
+  return stream()->read();
+}
+
+size_t aJsonStream::readBytes(uint8_t *buffer, size_t len)
+{
+  for (size_t i = 0; i < len; i++)
+    {
+      int ch = this->getch();
+      if (ch == EOF)
+  {
+    return i;
+  }
+      buffer[i] = ch;
+    }
+  return len;
+}
+
+void aJsonStream::ungetch(char ch)
+{
+  bucket = ch;
+}
+
+size_t aJsonStream::write(uint8_t ch)
+{
+  return stream()->write(ch);
+}
+
+
+//*************************************************
+// Public Methods for the Class aJsonClientStream
+//*************************************************
+
+// NONE
+
+//*************************************************
+// Private Methods for the Class aJsonClientStream
+//*************************************************
+
+int aJsonClientStream::getch()
+{
+  if (bucket != EOF)
+    {
+      int ret = bucket;
+      bucket = EOF;
+      return ret;
+    }
+  while (!stream()->available() && stream()->connected()) /* spin */;
+  if (!stream()->connected())
+    {
+      stream()->stop();
+      return EOF;
+    }
+  return stream()->read();
+}
+
+//*************************************************
+// Public Methods for the Class aJsonStringStream
+//*************************************************
+
+bool aJsonStringStream::available()
+{
+  if (bucket != EOF)
+    return true;
+  return inbuf_len > 0;
+}
+
+//*************************************************
+// Private Methods for the Class aJsonStringStream
+//*************************************************
+
+int aJsonStringStream::getch()
+{
+  if (bucket != EOF)
+    {
+      int ret = bucket;
+      bucket = EOF;
+      return ret;
+    }
+  if (!inbuf || !inbuf_len)
+    {
+      return EOF;
+    }
+  char ch = *inbuf++;
+  inbuf_len--;
+  return ch;
+}
+
+size_t aJsonStringStream::write(uint8_t ch)
+{
+  if (!outbuf || outbuf_len <= 1)
+    {
+      return 0;
+    }
+  *outbuf++ = ch; outbuf_len--;
+  *outbuf = 0;
+  return 1;
+}
+
+
+//*************************************************
+// Public Methods for the Class aJsonClass
+//*************************************************
+
+// Parse an object - create a new root, and populate.
+aJsonObject* aJsonClass::parse(aJsonStream* stream)
+{
+  return parse(stream, NULL);
+}
+
+// Parse an object - create a new root, and populate.
+aJsonObject* aJsonClass::parse(aJsonStream* stream, char** filter)
+{
+  if (stream == NULL)
+    {
+      return NULL;
+    }
+  aJsonObject *c = newItem();
+  if (!c)
+    return NULL; /* memory fail */
+
+  stream->skip();
+  if (stream->parseValue(c, filter) == EOF)
+    {
+      deleteItem(c);
+      return NULL;
+    }
+  return c;
+}
+
+// Parse an object - create a new root, and populate.
+aJsonObject* aJsonClass::parse(char *value)
+{
+  aJsonStringStream stringStream(value, NULL);
+  aJsonObject* result = parse(&stringStream);
+  return result;
+}
+
+// Render a aJsonObject item/entity/structure to text.
+int aJsonClass::print(aJsonObject* item, aJsonStream* stream)
+{
+  return stream->printValue(item);
+}
+
+char* aJsonClass::print(aJsonObject* item)
+{
+  char* outBuf = (char*) malloc(256); /* XXX: Dynamic size. */
+  if (outBuf == NULL)
+    {
+      return NULL;
+    }
+  aJsonStringStream stringStream(NULL, outBuf, 256);
+  print(item, &stringStream);
+  return outBuf;
+}
+
+void aJsonClass::deleteItem(aJsonObject *c)
+{
+  aJsonObject *next;
+  while (c)
+    {
+      next = c->next;
+      if (!(c->type & aJson_IsReference) && c->child)
+        {
+          deleteItem(c->child);
+        }
+      if ((c->type == aJson_String) && c->valuestring)
+        {
+          free(c->valuestring);
+        }
+      if (c->name)
+        {
+          free(c->name);
+        }
+      free(c);
+      c = next;
+    }
+}
+
 // Get Array size/item / object item.
-unsigned char
-aJsonClass::getArraySize(aJsonObject *array)
+unsigned char aJsonClass::getArraySize(aJsonObject *array)
 {
   aJsonObject *c = array->child;
   unsigned char i = 0;
@@ -926,16 +913,16 @@ aJsonClass::getArraySize(aJsonObject *array)
     i++, c = c->next;
   return i;
 }
-aJsonObject*
-aJsonClass::getArrayItem(aJsonObject *array, unsigned char item)
+
+aJsonObject* aJsonClass::getArrayItem(aJsonObject *array, unsigned char item)
 {
   aJsonObject *c = array->child;
   while (c && item > 0)
     item--, c = c->next;
   return c;
 }
-aJsonObject*
-aJsonClass::getObjectItem(aJsonObject *object, const char *string)
+
+aJsonObject* aJsonClass::getObjectItem(aJsonObject *object, const char *string)
 {
   aJsonObject *c = object->child;
   while (c && strcasecmp(c->name, string))
@@ -943,30 +930,167 @@ aJsonClass::getObjectItem(aJsonObject *object, const char *string)
   return c;
 }
 
-// Utility for array list handling.
-void
-aJsonClass::suffixObject(aJsonObject *prev, aJsonObject *item)
+// Create basic types:
+//********************
+aJsonObject* aJsonClass::createNull()
 {
-  prev->next = item;
-  item->prev = prev;
+  aJsonObject *item = newItem();
+  if (item)
+    item->type = aJson_NULL;
+  return item;
 }
-// Utility for handling references.
-aJsonObject*
-aJsonClass::createReference(aJsonObject *item)
+
+aJsonObject* aJsonClass::createTrue()
 {
-  aJsonObject *ref = newItem();
-  if (!ref)
-    return 0;
-  memcpy(ref, item, sizeof(aJsonObject));
-  ref->name = 0;
-  ref->type |= aJson_IsReference;
-  ref->next = ref->prev = 0;
-  return ref;
+  aJsonObject *item = newItem();
+  if (item)
+    {
+      item->type = aJson_True;
+      item->valuebool = -1;
+    }
+  return item;
+}
+
+aJsonObject* aJsonClass::createFalse()
+{
+  aJsonObject *item = newItem();
+  if (item)
+    {
+      item->type = aJson_False;
+      item->valuebool = 0;
+    }
+  return item;
+}
+
+aJsonObject* aJsonClass::createItem(char b)
+{
+  aJsonObject *item = newItem();
+  if (item)
+    {
+      item->type = b ? aJson_True : aJson_False;
+      item->valuebool = b ? -1 : 0;
+    }
+  return item;
+}
+
+aJsonObject* aJsonClass::createItem(int num)
+{
+  aJsonObject *item = newItem();
+  if (item)
+    {
+      item->type = aJson_Int;
+      item->valueint = (int) num;
+    }
+  return item;
+}
+
+aJsonObject* aJsonClass::createItem(double num)
+{
+  aJsonObject *item = newItem();
+  if (item)
+    {
+      item->type = aJson_Float;
+      item->valuefloat = num;
+    }
+  return item;
+}
+
+aJsonObject* aJsonClass::createItem(const char *string)
+{
+  aJsonObject *item = newItem();
+  if (item)
+    {
+      item->type = aJson_String;
+      item->valuestring = strdup(string);
+    }
+  return item;
+}
+
+aJsonObject* aJsonClass::createArray()
+{
+  aJsonObject *item = newItem();
+  if (item)
+    item->type = aJson_Array;
+  return item;
+}
+
+aJsonObject* aJsonClass::createObject()
+{
+  aJsonObject *item = newItem();
+  if (item)
+    item->type = aJson_Object;
+  return item;
+}
+
+// Create Arrays:
+//*******************
+aJsonObject* aJsonClass::createIntArray(int *numbers, unsigned char count)
+{
+  unsigned char i;
+  aJsonObject *n = 0, *p = 0, *a = createArray();
+  for (i = 0; a && i < count; i++)
+    {
+      n = createItem(numbers[i]);
+      if (!i)
+        a->child = n;
+      else
+        suffixObject(p, n);
+      p = n;
+    }
+  return a;
+}
+
+aJsonObject* aJsonClass::createFloatArray(double *numbers, unsigned char count)
+{
+  unsigned char i;
+  aJsonObject *n = 0, *p = 0, *a = createArray();
+  for (i = 0; a && i < count; i++)
+    {
+      n = createItem(numbers[i]);
+      if (!i)
+        a->child = n;
+      else
+        suffixObject(p, n);
+      p = n;
+    }
+  return a;
+}
+
+aJsonObject* aJsonClass::createDoubleArray(double *numbers, unsigned char count)
+{
+  unsigned char i;
+  aJsonObject *n = 0, *p = 0, *a = createArray();
+  for (i = 0; a && i < count; i++)
+    {
+      n = createItem(numbers[i]);
+      if (!i)
+        a->child = n;
+      else
+        suffixObject(p, n);
+      p = n;
+    }
+  return a;
+}
+
+aJsonObject* aJsonClass::createStringArray(const char **strings, unsigned char count)
+{
+  unsigned char i;
+  aJsonObject *n = 0, *p = 0, *a = createArray();
+  for (i = 0; a && i < count; i++)
+    {
+      n = createItem(strings[i]);
+      if (!i)
+        a->child = n;
+      else
+        suffixObject(p, n);
+      p = n;
+    }
+  return a;
 }
 
 // Add item to array/object.
-void
-aJsonClass::addItemToArray(aJsonObject *array, aJsonObject *item)
+//***************************
+void aJsonClass::addItemToArray(aJsonObject *array, aJsonObject *item)
 {
   aJsonObject *c = array->child;
   if (!item)
@@ -982,8 +1106,7 @@ aJsonClass::addItemToArray(aJsonObject *array, aJsonObject *item)
       suffixObject(c, item);
     }
 }
-void
-aJsonClass::addItemToObject(aJsonObject *object, const char *string,
+void aJsonClass::addItemToObject(aJsonObject *object, const char *string,
     aJsonObject *item)
 {
   if (!item)
@@ -993,20 +1116,24 @@ aJsonClass::addItemToObject(aJsonObject *object, const char *string,
   item->name = strdup(string);
   addItemToArray(object, item);
 }
-void
-aJsonClass::addItemReferenceToArray(aJsonObject *array, aJsonObject *item)
+
+// Add reference items to array/object.
+//*************************************
+void aJsonClass::addItemReferenceToArray(aJsonObject *array, aJsonObject *item)
 {
   addItemToArray(array, createReference(item));
 }
-void
-aJsonClass::addItemReferenceToObject(aJsonObject *object, const char *string,
+
+void aJsonClass::addItemReferenceToObject(aJsonObject *object, const char *string,
     aJsonObject *item)
 {
   addItemToObject(object, string, createReference(item));
 }
 
-aJsonObject*
-aJsonClass::detachItemFromArray(aJsonObject *array, unsigned char which)
+
+// Remove/Detach items from Arrays/Objects.
+//*****************************************
+aJsonObject* aJsonClass::detachItemFromArray(aJsonObject *array, unsigned char which)
 {
   aJsonObject *c = array->child;
   while (c && which > 0)
@@ -1022,13 +1149,13 @@ aJsonClass::detachItemFromArray(aJsonObject *array, unsigned char which)
   c->prev = c->next = 0;
   return c;
 }
-void
-aJsonClass::deleteItemFromArray(aJsonObject *array, unsigned char which)
+
+void aJsonClass::deleteItemFromArray(aJsonObject *array, unsigned char which)
 {
   deleteItem(detachItemFromArray(array, which));
 }
-aJsonObject*
-aJsonClass::detachItemFromObject(aJsonObject *object, const char *string)
+
+aJsonObject* aJsonClass::detachItemFromObject(aJsonObject *object, const char *string)
 {
   unsigned char i = 0;
   aJsonObject *c = object->child;
@@ -1038,15 +1165,15 @@ aJsonClass::detachItemFromObject(aJsonObject *object, const char *string)
     return detachItemFromArray(object, i);
   return 0;
 }
-void
-aJsonClass::deleteItemFromObject(aJsonObject *object, const char *string)
+
+void aJsonClass::deleteItemFromObject(aJsonObject *object, const char *string)
 {
   deleteItem(detachItemFromObject(object, string));
 }
 
 // Replace array/object items with new ones.
-void
-aJsonClass::replaceItemInArray(aJsonObject *array, unsigned char which,
+//******************************************
+void aJsonClass::replaceItemInArray(aJsonObject *array, unsigned char which,
     aJsonObject *newitem)
 {
   aJsonObject *c = array->child;
@@ -1065,8 +1192,8 @@ aJsonClass::replaceItemInArray(aJsonObject *array, unsigned char which,
   c->next = c->prev = 0;
   deleteItem(c);
 }
-void
-aJsonClass::replaceItemInObject(aJsonObject *object, const char *string,
+
+void aJsonClass::replaceItemInObject(aJsonObject *object, const char *string,
     aJsonObject *newitem)
 {
   unsigned char i = 0;
@@ -1080,208 +1207,37 @@ aJsonClass::replaceItemInObject(aJsonObject *object, const char *string,
     }
 }
 
-// Create basic types:
-aJsonObject*
-aJsonClass::createNull()
-{
-  aJsonObject *item = newItem();
-  if (item)
-    item->type = aJson_NULL;
-  return item;
-}
-
-aJsonObject*
-aJsonClass::createTrue()
-{
-  aJsonObject *item = newItem();
-  if (item)
-    {
-      item->type = aJson_True;
-      item->valuebool = -1;
-    }
-  return item;
-}
-aJsonObject*
-aJsonClass::createFalse()
-{
-  aJsonObject *item = newItem();
-  if (item)
-    {
-      item->type = aJson_False;
-      item->valuebool = 0;
-    }
-  return item;
-}
-aJsonObject*
-aJsonClass::createItem(char b)
-{
-  aJsonObject *item = newItem();
-  if (item)
-    {
-      item->type = b ? aJson_True : aJson_False;
-      item->valuebool = b ? -1 : 0;
-    }
-  return item;
-}
-
-aJsonObject*
-aJsonClass::createItem(int num)
-{
-  aJsonObject *item = newItem();
-  if (item)
-    {
-      item->type = aJson_Int;
-      item->valueint = (int) num;
-    }
-  return item;
-}
-
-aJsonObject*
-aJsonClass::createItem(double num)
-{
-  aJsonObject *item = newItem();
-  if (item)
-    {
-      item->type = aJson_Float;
-      item->valuefloat = num;
-    }
-  return item;
-}
-
-aJsonObject*
-aJsonClass::createItem(const char *string)
-{
-  aJsonObject *item = newItem();
-  if (item)
-    {
-      item->type = aJson_String;
-      item->valuestring = strdup(string);
-    }
-  return item;
-}
-
-aJsonObject*
-aJsonClass::createArray()
-{
-  aJsonObject *item = newItem();
-  if (item)
-    item->type = aJson_Array;
-  return item;
-}
-aJsonObject*
-aJsonClass::createObject()
-{
-  aJsonObject *item = newItem();
-  if (item)
-    item->type = aJson_Object;
-  return item;
-}
-
-// Create Arrays:
-aJsonObject*
-aJsonClass::createIntArray(int *numbers, unsigned char count)
-{
-  unsigned char i;
-  aJsonObject *n = 0, *p = 0, *a = createArray();
-  for (i = 0; a && i < count; i++)
-    {
-      n = createItem(numbers[i]);
-      if (!i)
-        a->child = n;
-      else
-        suffixObject(p, n);
-      p = n;
-    }
-  return a;
-}
-
-aJsonObject*
-aJsonClass::createFloatArray(double *numbers, unsigned char count)
-{
-  unsigned char i;
-  aJsonObject *n = 0, *p = 0, *a = createArray();
-  for (i = 0; a && i < count; i++)
-    {
-      n = createItem(numbers[i]);
-      if (!i)
-        a->child = n;
-      else
-        suffixObject(p, n);
-      p = n;
-    }
-  return a;
-}
-
-aJsonObject*
-aJsonClass::createDoubleArray(double *numbers, unsigned char count)
-{
-  unsigned char i;
-  aJsonObject *n = 0, *p = 0, *a = createArray();
-  for (i = 0; a && i < count; i++)
-    {
-      n = createItem(numbers[i]);
-      if (!i)
-        a->child = n;
-      else
-        suffixObject(p, n);
-      p = n;
-    }
-  return a;
-}
-
-aJsonObject*
-aJsonClass::createStringArray(const char **strings, unsigned char count)
-{
-  unsigned char i;
-  aJsonObject *n = 0, *p = 0, *a = createArray();
-  for (i = 0; a && i < count; i++)
-    {
-      n = createItem(strings[i]);
-      if (!i)
-        a->child = n;
-      else
-        suffixObject(p, n);
-      p = n;
-    }
-  return a;
-}
-
-void
-aJsonClass::addNullToObject(aJsonObject* object, const char* name)
+void aJsonClass::addNullToObject(aJsonObject* object, const char* name)
 {
   addItemToObject(object, name, createNull());
 }
 
-void
-aJsonClass::addTrueToObject(aJsonObject* object, const char* name)
+void aJsonClass::addTrueToObject(aJsonObject* object, const char* name)
 {
   addItemToObject(object, name, createTrue());
 }
 
-void
-aJsonClass::addFalseToObject(aJsonObject* object, const char* name)
+void aJsonClass::addFalseToObject(aJsonObject* object, const char* name)
 {
   addItemToObject(object, name, createFalse());
 }
 
-void
-aJsonClass::addNumberToObject(aJsonObject* object, const char* name, int n)
+void aJsonClass::addNumberToObject(aJsonObject* object, const char* name, int n)
 {
   addItemToObject(object, name, createItem(n));
 }
 
-void
-aJsonClass::addNumberToObject(aJsonObject* object, const char* name, double n)
+void aJsonClass::addNumberToObject(aJsonObject* object, const char* name, double n)
 {
   addItemToObject(object, name, createItem(n));
 }
 
-void
-aJsonClass::addStringToObject(aJsonObject* object, const char* name,
+void aJsonClass::addStringToObject(aJsonObject* object, const char* name,
     const char* s)
 {
   addItemToObject(object, name, createItem(s));
 }
+
 
 // Mods Added by Darkdruid and Azrrael-exe
 
@@ -1305,6 +1261,45 @@ float* aJsonClass::getFloatArray(aJsonObject* object)
   return out;
 }
 
+//*************************************************
+// Protected Methods for the Class aJsonClass
+//*************************************************
+
+// Internal constructor.
+
+aJsonObject* aJsonClass::newItem()
+{
+  aJsonObject* node = (aJsonObject*) malloc(sizeof(aJsonObject));
+  if (node)
+    memset(node, 0, sizeof(aJsonObject));
+  return node;
+}
+
+//*************************************************
+// Private Methods for the Class aJsonClass
+//*************************************************
+
+// Utility for array list handling.
+void aJsonClass::suffixObject(aJsonObject *prev, aJsonObject *item)
+{
+  prev->next = item;
+  item->prev = prev;
+}
+// Utility for handling references.
+
+aJsonObject* aJsonClass::createReference(aJsonObject *item)
+{
+  aJsonObject *ref = newItem();
+  if (!ref)
+    return 0;
+  memcpy(ref, item, sizeof(aJsonObject));
+  ref->name = 0;
+  ref->type |= aJson_IsReference;
+  ref->next = ref->prev = 0;
+  return ref;
+}
+
+//---------------------------------------
 
 //TODO conversion routines btw. float & int types?
 
