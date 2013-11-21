@@ -1253,6 +1253,12 @@ aJsonClass::addNullToObject(aJsonObject* object, const char* name)
 }
 
 void
+aJsonClass::addBooleanToObject(aJsonObject* object, const char* name, bool b)
+{
+  addItemToObject(object, name, (b ? createTrue() : createFalse()));
+}
+
+void
 aJsonClass::addTrueToObject(aJsonObject* object, const char* name)
 {
   addItemToObject(object, name, createTrue());

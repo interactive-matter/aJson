@@ -233,6 +233,7 @@ public:
 			aJsonObject *newitem);
 
 	void addNullToObject(aJsonObject* object, const char* name);
+	void addBooleanToObject(aJsonObject* object, const char* name, bool b);
 	void addTrueToObject(aJsonObject* object, const char* name);
 	void addFalseToObject(aJsonObject* object, const char* name);
 	void addNumberToObject(aJsonObject* object, const char* name, int n);
