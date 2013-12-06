@@ -212,7 +212,7 @@ int
 aJsonStream::parseNumber(aJsonObject *item)
 {
   int i = 0;
-  char sign = 1;
+  int sign = 1;
 
   int in = this->getch();
   if (in == EOF)
@@ -238,7 +238,7 @@ aJsonStream::parseNumber(aJsonObject *item)
         in = this->getch();
       }
     while (in >= '0' && in <= '9'); // Number?
-  //end of integer part Ð or isn't it?
+  //end of integer part ï¿½ or isn't it?
   if (!(in == '.' || in == 'e' || in == 'E'))
     {
       item->valueint = i * (int) sign;
