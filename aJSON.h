@@ -49,6 +49,8 @@
 #define EOF -1
 #endif
 
+#define PRINT_BUFFER_LEN 256
+
 // The aJson structure:
 typedef struct aJsonObject {
         char *name; // The item's name string, if this item is the child of, or is in the list of subitems of an object.
