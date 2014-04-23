@@ -50,6 +50,7 @@
 //how much digits after . for float
 #define FLOAT_PRECISION 5
 
+#define AJASON_PRINT_BUFFER_MAX_SIZE_BYTES 384
 
 bool
 aJsonStream::available()
@@ -566,12 +567,12 @@ aJsonClass::print(aJsonObject* item, aJsonStream* stream)
 char*
 aJsonClass::print(aJsonObject* item)
 {
-  char* outBuf = (char*) malloc(256); /* XXX: Dynamic size. */
+  char* outBuf = (char*) malloc(AJASON_PRINT_BUFFER_MAX_SIZE_BYTES);
   if (outBuf == NULL)
     {
       return NULL;
     }
-  aJsonStringStream stringStream(NULL, outBuf, 256);
+  aJsonStringStream stringStream(NULL, outBuf, AJASON_PRINT_BUFFER_MAX_SIZE_BYTES);
   print(item, &stringStream);
   return outBuf;
 }
