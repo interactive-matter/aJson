@@ -50,6 +50,7 @@
 //how much digits after . for float
 #define FLOAT_PRECISION 5
 
+#define AJASON_PRINT_BUFFER_MAX_SIZE_BYTES 384
 
 bool
 aJsonStream::available()
@@ -208,10 +209,10 @@ aJsonClass::deleteItem(aJsonObject *c)
 }
 
 // Parse the input text to generate a number, and populate the result into item.
-int
+ajson_int_t
 aJsonStream::parseNumber(aJsonObject *item)
 {
-  int i = 0;
+  ajson_int_t i = 0;
   char sign = 1;
 
   int in = this->getch();
@@ -241,7 +242,16 @@ aJsonStream::parseNumber(aJsonObject *item)
   //end of integer part Ð or isn't it?
   if (!(in == '.' || in == 'e' || in == 'E'))
     {
-      item->valueint = i * (int) sign;
+#ifdef AJSON_UNSIGNED_LONG_INT
+      if (sign != 1)
+      {
+        /* Can't store signed value in unsigned variable */
+        return EOF;
+      }
+      item->valueint = i;
+#else
+      item->valueint = i * (ajson_int_t) sign;
+#endif
       item->type = aJson_Int;
     }
   //ok it seems to be a double
@@ -566,12 +576,12 @@ aJsonClass::print(aJsonObject* item, aJsonStream* stream)
 char*
 aJsonClass::print(aJsonObject* item)
 {
-  char* outBuf = (char*) malloc(256); /* XXX: Dynamic size. */
+  char* outBuf = (char*) malloc(AJASON_PRINT_BUFFER_MAX_SIZE_BYTES);
   if (outBuf == NULL)
     {
       return NULL;
     }
-  aJsonStringStream stringStream(NULL, outBuf, 256);
+  aJsonStringStream stringStream(NULL, outBuf, AJASON_PRINT_BUFFER_MAX_SIZE_BYTES);
   print(item, &stringStream);
   return outBuf;
 }
@@ -1125,13 +1135,13 @@ aJsonClass::createItem(char b)
 }
 
 aJsonObject*
-aJsonClass::createItem(int num)
+aJsonClass::createItem(ajson_int_t num)
 {
   aJsonObject *item = newItem();
   if (item)
     {
       item->type = aJson_Int;
-      item->valueint = (int) num;
+      item->valueint = num;
     }
   return item;
 }
@@ -1179,7 +1189,7 @@ aJsonClass::createObject()
 
 // Create Arrays:
 aJsonObject*
-aJsonClass::createIntArray(int *numbers, unsigned char count)
+aJsonClass::createIntArray(ajson_int_t *numbers, unsigned char count)
 {
   unsigned char i;
   aJsonObject *n = 0, *p = 0, *a = createArray();
@@ -1271,7 +1281,7 @@ aJsonClass::addFalseToObject(aJsonObject* object, const char* name)
 }
 
 void
-aJsonClass::addNumberToObject(aJsonObject* object, const char* name, int n)
+aJsonClass::addNumberToObject(aJsonObject* object, const char* name, ajson_int_t n)
 {
   addItemToObject(object, name, createItem(n));
 }
