@@ -30,6 +30,9 @@
 #include <Client.h>
 #include <Arduino.h>  // To get access to the Arduino millis() function
 
+// Use an unsigned long for integer values
+#define AJSON_UNSIGNED_LONG_INT
+
 /******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -49,6 +52,12 @@
 #define EOF -1
 #endif
 
+#ifdef AJSON_UNSIGNED_LONG_INT
+typedef unsigned long ajson_int_t;
+#else
+typedef int ajson_int_t;
+#endif
+
 // The aJson structure:
 typedef struct aJsonObject {
         char *name; // The item's name string, if this item is the child of, or is in the list of subitems of an object.
@@ -60,7 +69,7 @@ typedef struct aJsonObject {
 	union {
 		char *valuestring; // The item's string, if type==aJson_String
 		char valuebool; //the items value for true & false
-		int valueint; // The item's number, if type==aJson_Number
+		ajson_int_t valueint; // The item's number, if type==aJson_Number
 		double valuefloat; // The item's number, if type==aJson_Number
 	};
 } aJsonObject;
@@ -79,7 +88,7 @@ public:
 	 * skips separating whitespace if you use this method. */
 	virtual bool available();
 
-	int parseNumber(aJsonObject *item);
+	ajson_int_t parseNumber(aJsonObject *item);
 	int printInt(aJsonObject *item);
 	int printFloat(aJsonObject *item);
 
@@ -199,14 +208,14 @@ public:
 	aJsonObject* createTrue();
 	aJsonObject* createFalse();
 	aJsonObject* createItem(char b);
-	aJsonObject* createItem(int num);
+	aJsonObject* createItem(ajson_int_t num);
 	aJsonObject* createItem(double num);
 	aJsonObject* createItem(const char *string);
 	aJsonObject* createArray();
 	aJsonObject* createObject();
 
 	// These utilities create an Array of count items.
-	aJsonObject* createIntArray(int *numbers, unsigned char count);
+	aJsonObject* createIntArray(ajson_int_t *numbers, unsigned char count);
 	aJsonObject* createFloatArray(double *numbers, unsigned char count);
 	aJsonObject* createDoubleArray(double *numbers, unsigned char count);
 	aJsonObject* createStringArray(const char **strings, unsigned char count);
@@ -236,7 +245,7 @@ public:
 	void addBooleanToObject(aJsonObject* object, const char* name, bool b);
 	void addTrueToObject(aJsonObject* object, const char* name);
 	void addFalseToObject(aJsonObject* object, const char* name);
-	void addNumberToObject(aJsonObject* object, const char* name, int n);
+	void addNumberToObject(aJsonObject* object, const char* name, ajson_int_t n);
         void addNumberToObject(aJsonObject* object, const char* name, double n);
 	void addStringToObject(aJsonObject* object, const char* name,
 					const char* s);
