@@ -140,7 +140,7 @@ only interested in "name", "format", "height" and "width" in the above example y
 
 ```c
 char** jsonFilter = {"name,"format","height","width",NULL};
- aJsonObject* jsonObject = aJson.parse(json_string,json_filter);
+ aJsonObject* jsonObject = aJson.parse(json_string,jsonFilter);
 ```
 (assuming you got the JSON string in the variable json_string - as a char*)
 
