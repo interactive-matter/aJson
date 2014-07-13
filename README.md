@@ -134,7 +134,7 @@ Filtering while parsing
 --------------
 
 Any JSON respond can have object name/value pairs your code either does not understand or is not interested in.
-To avoid those values to go into your memory you can simply add filters to your parsing request.
+To avoid those values going into your memory you can simply add filters to your parsing request.
 A set of filter is just a list of names you are interested in, ended by a null value. If you are 
 only interested in "name", "format", "height" and "width" in the above example you can do it like:
 
