@@ -125,7 +125,7 @@ aJsonClientStream::getch()
       return ret;
     }
   while (!stream()->available() && stream()->connected()) /* spin */;
-  if (!stream()->connected())
+  if (!stream()->available()) // therefore, !stream()->connected()
     {
       stream()->stop();
       return EOF;
