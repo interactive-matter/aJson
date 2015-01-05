@@ -566,12 +566,12 @@ aJsonClass::print(aJsonObject* item, aJsonStream* stream)
 char*
 aJsonClass::print(aJsonObject* item)
 {
-  char* outBuf = (char*) malloc(256); /* XXX: Dynamic size. */
+  char* outBuf = (char*) malloc(PRINT_BUFFER_LEN); /* XXX: Dynamic size. */
   if (outBuf == NULL)
     {
       return NULL;
     }
-  aJsonStringStream stringStream(NULL, outBuf, 256);
+  aJsonStringStream stringStream(NULL, outBuf, PRINT_BUFFER_LEN);
   print(item, &stringStream);
   return outBuf;
 }
