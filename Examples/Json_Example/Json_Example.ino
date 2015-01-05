@@ -58,7 +58,7 @@ void testObjects() {
     printProgStr( ADDING_HEIGHT_STRING);
     aJson.addNumberToObject(fmt, "height", 1080);
     printProgStr( ADDING_INTERLACE_STRING);
-    aJson.addFalseToObject(fmt, "interlace");
+    aJson.addBooleanToObject(fmt, "interlace", false);
     printProgStr( ADDING_FRAMERATE_STRING);
     aJson.addNumberToObject(fmt, "frame rate", 24);
     printProgStr( ADDING_LENGTH_STRING);

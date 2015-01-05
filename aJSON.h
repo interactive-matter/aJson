@@ -34,14 +34,13 @@
  * Definitions
  ******************************************************************************/
 // aJson Types:
-#define aJson_False 0
-#define aJson_True 1
-#define aJson_NULL 2
-#define aJson_Int 3
-#define aJson_Float 4
-#define aJson_String 5
-#define aJson_Array 6
-#define aJson_Object 7
+#define aJson_NULL 0
+#define aJson_Boolean 1
+#define aJson_Int 2
+#define aJson_Float 3
+#define aJson_String 4
+#define aJson_Array 5
+#define aJson_Object 6
 
 #define aJson_IsReference 128
 
@@ -196,8 +195,7 @@ public:
 
 	// These calls create a aJsonObject item of the appropriate type.
 	aJsonObject* createNull();
-	aJsonObject* createTrue();
-	aJsonObject* createFalse();
+	aJsonObject* createItem(bool b);
 	aJsonObject* createItem(char b);
 	aJsonObject* createItem(int num);
 	aJsonObject* createItem(double num);
@@ -234,8 +232,6 @@ public:
 
 	void addNullToObject(aJsonObject* object, const char* name);
 	void addBooleanToObject(aJsonObject* object, const char* name, bool b);
-	void addTrueToObject(aJsonObject* object, const char* name);
-	void addFalseToObject(aJsonObject* object, const char* name);
 	void addNumberToObject(aJsonObject* object, const char* name, int n);
         void addNumberToObject(aJsonObject* object, const char* name, double n);
 	void addStringToObject(aJsonObject* object, const char* name,

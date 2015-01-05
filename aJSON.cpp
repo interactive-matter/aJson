@@ -638,8 +638,8 @@ aJsonStream::parseValue(aJsonObject *item, char** filter)
         }
       if (!strncmp(buffer, "false", 5))
         {
-          item->type = aJson_False;
-          item->valuebool = 0;
+          item->type = aJson_Boolean;
+          item->valuebool = false;
           return 0;
         }
     }
@@ -654,8 +654,8 @@ aJsonStream::parseValue(aJsonObject *item, char** filter)
         }
       if (!strncmp(buffer, "true", 4))
         {
-          item->type = aJson_True;
-          item->valuebool = -1;
+          item->type = aJson_Boolean;
+          item->valuebool = true;
           return 0;
         }
     }
@@ -678,11 +678,13 @@ aJsonStream::printValue(aJsonObject *item)
   case aJson_NULL:
     result = this->print("null");
     break;
-  case aJson_False:
-    result = this->print("false");
-    break;
-  case aJson_True:
-    result = this->print("true");
+  case aJson_Boolean:
+    if(item->valuebool){
+      result = this->print("true");
+    }
+    else{
+      result = this->print("false");
+    }
     break;
   case aJson_Int:
     result = this->printInt(item);
@@ -1091,34 +1093,23 @@ aJsonClass::createNull()
 }
 
 aJsonObject*
-aJsonClass::createTrue()
+aJsonClass::createItem(bool b)
 {
   aJsonObject *item = newItem();
-  if (item)
-    {
-      item->type = aJson_True;
-      item->valuebool = -1;
-    }
+  if (item){
+    item->type = aJson_Boolean;
+    item->valuebool = b;
+  }
+    
   return item;
 }
-aJsonObject*
-aJsonClass::createFalse()
-{
-  aJsonObject *item = newItem();
-  if (item)
-    {
-      item->type = aJson_False;
-      item->valuebool = 0;
-    }
-  return item;
-}
-aJsonObject*
+
 aJsonClass::createItem(char b)
 {
   aJsonObject *item = newItem();
   if (item)
     {
-      item->type = b ? aJson_True : aJson_False;
+      item->type = aJson_Boolean;
       item->valuebool = b ? -1 : 0;
     }
   return item;
@@ -1255,19 +1246,7 @@ aJsonClass::addNullToObject(aJsonObject* object, const char* name)
 void
 aJsonClass::addBooleanToObject(aJsonObject* object, const char* name, bool b)
 {
-  addItemToObject(object, name, (b ? createTrue() : createFalse()));
-}
-
-void
-aJsonClass::addTrueToObject(aJsonObject* object, const char* name)
-{
-  addItemToObject(object, name, createTrue());
-}
-
-void
-aJsonClass::addFalseToObject(aJsonObject* object, const char* name)
-{
-  addItemToObject(object, name, createFalse());
+  addItemToObject(object, name, createItem(b));
 }
 
 void
