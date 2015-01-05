@@ -1104,6 +1104,7 @@ aJsonClass::createItem(bool b)
   return item;
 }
 
+aJsonObject*
 aJsonClass::createItem(char b)
 {
   aJsonObject *item = newItem();
