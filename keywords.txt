@@ -25,8 +25,6 @@ getArraySize	KEYWORD2
 getArrayItem	KEYWORD2
 getObjectItem	KEYWORD2
 createNull	KEYWORD2
-createTrue	KEYWORD2
-createFalse	KEYWORD2
 createBool	KEYWORD2
 createNumber	KEYWORD2
 createString	KEYWORD2
@@ -36,29 +34,28 @@ createIntArray	KEYWORD2
 createFloatArray	KEYWORD2
 createDoubleArray	KEYWORD2
 createStringArray	KEYWORD2
-addItemToArray		KEYWORD2
-addItemToObject		KEYWORD2
+addItemToArray	KEYWORD2
+addItemToObject	KEYWORD2
 addItemReferenceToArray	KEYWORD2
 addItemReferenceToObject	KEYWORD2
-detachItemFromArray		KEYWORD2
-deleteItemFromArray		KEYWORD2
-detachItemFromObject		KEYWORD2
-deleteItemFromObject		KEYWORD2
-replaceItemInArray		KEYWORD2
-replaceItemInObject		KEYWORD2
-addNullToObject			KEYWORD2
-addTrueToObject			KEYWORD2
-addFalseToObject		KEYWORD2
-addNumberToObject		KEYWORD2
-addStringToObject		KEYWORD2
-
+detachItemFromArray	KEYWORD2
+deleteItemFromArray	KEYWORD2
+detachItemFromObject	KEYWORD2
+deleteItemFromObject	KEYWORD2
+replaceItemInArray	KEYWORD2
+replaceItemInObject	KEYWORD2
+addNullToObject	KEYWORD2
+addBooleanToObject	KEYWORD2
+addNumberToObject	KEYWORD2
+addStringToObject	KEYWORD2
+addStringToObject	KEYWORD2
+useDictionary	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
 #######################################
 
-aJson_False	LITERAL1
-aJson_True	LITERAL1
+aJson_Boolean	LITERAL1
 aJson_NULL	LITERAL1
 aJson_Number	LITERAL1
 aJson_String	LITERAL1
