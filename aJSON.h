@@ -218,11 +218,11 @@ public:
   // Append item to the specified array/object.
   void addItemToArray(aJsonObject *array, aJsonObject *item);
   void addItemToObject(aJsonObject *object, const char *string,
-             aJsonObject *item);
+            aJsonObject *item);
   // Append reference to item to the specified array/object. Use this when you want to add an existing aJsonObject to a new aJsonObject, but don't want to corrupt your existing aJsonObject.
   void addItemReferenceToArray(aJsonObject *array, aJsonObject *item);
   void addItemReferenceToObject(aJsonObject *object, const char *string,
-                  aJsonObject *item);
+            aJsonObject *item);
 
   // Remove/Detach items from Arrays/Objects.
   aJsonObject* detachItemFromArray(aJsonObject *array, unsigned char which);
@@ -232,9 +232,9 @@ public:
 
   // Update array items.
   void replaceItemInArray(aJsonObject *array, unsigned char which,
-              aJsonObject *newitem);
+            aJsonObject *newitem);
   void replaceItemInObject(aJsonObject *object, const char *string,
-               aJsonObject *newitem);
+            aJsonObject *newitem);
 
   void addNullToObject(aJsonObject* object, const char* name);
   void addBooleanToObject(aJsonObject* object, const char* name, bool b);
@@ -242,10 +242,14 @@ public:
   void addNumberToObject(aJsonObject* object, const char* name, double n);
   void addStringToObject(aJsonObject* object, const char* name,
                const char* s);
+  void useDictionary(char** dictionary);
 
 protected:
   friend class aJsonStream;
   static aJsonObject* newItem();
+  char ** dictionary;
+  int dictionaryLenght;
+  char * findWord(char * name);
 
 private:
   void suffixObject(aJsonObject *prev, aJsonObject *item);

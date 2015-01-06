@@ -198,7 +198,10 @@ aJsonClass::deleteItem(aJsonObject *c)
     }
     if (c->name)
     {
-      free(c->name);
+      if (findWord(c->name) != c->name)
+      {
+        free(c->name);
+      }
     }
     free(c);
     c = next;
@@ -843,7 +846,21 @@ aJsonStream::parseObject(aJsonObject *item, char** filter)
       return EOF;
     }
     this->skip();
-    child->name = child->valuestring;
+
+    char * namePointer = aJson.findWord(child->valuestring);
+
+    if (namePointer != NULL)
+    {
+      child->name = namePointer;
+      free(child->valuestring);
+    }
+
+    else
+    {
+      child->name = child->valuestring;
+    }
+
+
     child->valuestring = NULL;
 
     in = this->getch();
@@ -992,8 +1009,24 @@ aJsonClass::addItemToObject(aJsonObject *object, const char *string,
   if (!item)
     return;
   if (item->name)
-    free(item->name);
-  item->name = strdup(string);
+  {
+    if (findWord(item->name) != item->name)
+    {
+      free(item->name);
+    }
+  }
+
+  char * namePointer = findWord(const_cast<char*>(string));
+
+  if (namePointer == NULL)
+  {
+    item->name = strdup(string);
+  }
+  else
+  {
+    item->name = namePointer;
+  }
+
   addItemToArray(object, item);
 }
 
@@ -1084,7 +1117,16 @@ aJsonClass::replaceItemInObject(aJsonObject *object, const char *string,
     i++, c = c->next;
   if (c)
   {
-    newitem->name = strdup(string);
+    char * namePointer = findWord(const_cast<char*>(string));
+    if (namePointer == NULL)
+    {
+      newitem->name = strdup(string);
+    }
+    else
+    {
+      newitem->name = namePointer;
+    }
+
     replaceItemInArray(object, i, newitem);
   }
 }
@@ -1275,6 +1317,34 @@ aJsonClass::addStringToObject(aJsonObject* object, const char* name,
                 const char* s)
 {
   addItemToObject(object, name, createItem(s));
+}
+
+void
+aJsonClass::useDictionary(char** dictionary)
+{
+  this->dictionary = dictionary;
+  if (dictionary == NULL){
+    this->dictionaryLenght = 0;
+  } 
+  else {
+    this->dictionaryLenght = -1;
+    while (this->dictionary[++this->dictionaryLenght] != NULL) {
+    /* do nothing */
+    }
+  }
+}
+
+char *
+aJsonClass::findWord(char * name)
+{
+  for (byte i = 0; i < this->dictionaryLenght; i++)
+  {
+    if (strcmp(name, this->dictionary[i]) == 0)
+    {
+      return this->dictionary[i];
+    }
+  }
+  return NULL;
 }
 
 //TODO conversion routines btw. float & int types?
