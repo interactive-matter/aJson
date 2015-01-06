@@ -860,7 +860,6 @@ aJsonStream::parseObject(aJsonObject *item, char** filter)
       child->name = child->valuestring;
     }
 
-
     child->valuestring = NULL;
 
     in = this->getch();
