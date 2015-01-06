@@ -98,9 +98,9 @@ the type as
  name->type
 ```
 
-which can be either aJson_False, aJson_True, aJson_NULL, aJson_Number, aJson_String, aJson_Array
+which can be either aJson_Boolean, aJson_NULL, aJson_Number, aJson_String, aJson_Array
 or aJson_Object. For aJson_Number you can use value.number.valueint or value.number.valuedouble, for aJson_String 
-you can use value.valuestring, for True or False, you can use value.valuebool.
+you can use value.valuestring, for Boolean, you can use value.valuebool.
 
 To render the object back to a string you can simply call
 
@@ -172,7 +172,7 @@ If you want to see how you'd build this struct in code?
 	aJson.addStringToObject(fmt,"type",		"rect");
 	aJson.addNumberToObject(fmt,"width",		1920);
 	aJson.addNumberToObject(fmt,"height",		1080);
-	aJson.addFalseToObject (fmt,"interlace");
+	aJson.addBooleanToObject (fmt,"interlace", false);
 	aJson.addNumberToObject(fmt,"frame rate",	24);
 ```
 
@@ -182,7 +182,7 @@ Sibling has type Object, name "format", and a child.
 That child has type String, name "type", value "rect", and a sibling:
 Sibling has type Number, name "width", value 1920, and a sibling:
 Sibling has type Number, name "height", value 1080, and a sibling:
-Sibling hs type False, name "interlace", and a sibling:
+Sibling has type Boolean, name "interlace", and a sibling:
 Sibling has type Number, name "frame rate", value 24
 
 If you want to create an array it works nearly the same way:
@@ -244,16 +244,16 @@ the type as
  name->type
 ```
 
-which can be either aJson_False, aJson_True, aJson_NULL, aJson_Number, aJson_String, aJson_Array
+which can be either aJson_Boolean, aJson_NULL, aJson_Number, aJson_String, aJson_Array
 or aJson_Object. For aJson_Number you can use value.number.valueint or value.number.valuedouble. 
 If you're expecting an int, read valueint, if not read valuedouble. For aJson_String 
-you can use value.valuestring, for True or False, you can use value.valuebool. 
+you can use value.valuestring, for Boolean, you can use value.valuebool. 
 
 next/prev is a doubly linked list of siblings. next takes you to your sibling,
 prev takes you back from your sibling to you.
 Only objects and arrays have a "child", and it's the head of the doubly linked list.
 A "child" entry will have prev==0, but next potentially points on. The last sibling has next=0.
-The type expresses Null/True/False/Number/String/Array/Object, all of which are #defined in
+The type expresses Null/Boolean/Number/String/Array/Object, all of which are #defined in
 aJson.h
 
 Any entry which is in the linked list which is the child of an object will have a "string"
