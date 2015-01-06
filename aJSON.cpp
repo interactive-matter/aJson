@@ -50,22 +50,21 @@
 //how much digits after . for float
 #define FLOAT_PRECISION 5
 
-
 bool
 aJsonStream::available()
 {
   if (bucket != EOF)
     return true;
   while (stream()->available())
+  {
+    /* Make an effort to skip whitespace. */
+    int ch = this->getch();
+    if (ch > 32)
     {
-      /* Make an effort to skip whitespace. */
-      int ch = this->getch();
-      if (ch > 32)
-       {
-	 this->ungetch(ch);
-	 return true;
-       }
+      this->ungetch(ch);
+      return true;
     }
+  }
   return false;
 }
 
@@ -73,11 +72,11 @@ int
 aJsonStream::getch()
 {
   if (bucket != EOF)
-    {
-      int ret = bucket;
-      bucket = EOF;
-      return ret;
-    }
+  {
+    int ret = bucket;
+    bucket = EOF;
+    return ret;
+  }
   // In case input was malformed - can happen, this is the
   // real world, we can end up in a situation where the parser
   // would expect another character and end up stuck on
@@ -103,33 +102,32 @@ size_t
 aJsonStream::readBytes(uint8_t *buffer, size_t len)
 {
   for (size_t i = 0; i < len; i++)
+  {
+    int ch = this->getch();
+    if (ch == EOF)
     {
-      int ch = this->getch();
-      if (ch == EOF)
-	{
-	  return i;
-	}
-      buffer[i] = ch;
+      return i;
     }
+    buffer[i] = ch;
+  }
   return len;
 }
-
 
 int
 aJsonClientStream::getch()
 {
   if (bucket != EOF)
-    {
-      int ret = bucket;
-      bucket = EOF;
-      return ret;
-    }
+  {
+    int ret = bucket;
+    bucket = EOF;
+    return ret;
+  }
   while (!stream()->available() && stream()->connected()) /* spin */;
   if (!stream()->available()) // therefore, !stream()->connected()
-    {
-      stream()->stop();
-      return EOF;
-    }
+  {
+    stream()->stop();
+    return EOF;
+  }
   return stream()->read();
 }
 
@@ -145,15 +143,15 @@ int
 aJsonStringStream::getch()
 {
   if (bucket != EOF)
-    {
-      int ret = bucket;
-      bucket = EOF;
-      return ret;
-    }
+  {
+    int ret = bucket;
+    bucket = EOF;
+    return ret;
+  }
   if (!inbuf || !inbuf_len)
-    {
-      return EOF;
-    }
+  {
+    return EOF;
+  }
   char ch = *inbuf++;
   inbuf_len--;
   return ch;
@@ -163,14 +161,14 @@ size_t
 aJsonStringStream::write(uint8_t ch)
 {
   if (!outbuf || outbuf_len <= 1)
-    {
-      return 0;
-    }
-  *outbuf++ = ch; outbuf_len--;
+  {
+    return 0;
+  }
+  *outbuf++ = ch;
+  outbuf_len--;
   *outbuf = 0;
   return 1;
 }
-
 
 // Internal constructor.
 aJsonObject*
@@ -188,23 +186,23 @@ aJsonClass::deleteItem(aJsonObject *c)
 {
   aJsonObject *next;
   while (c)
+  {
+    next = c->next;
+    if (!(c->type & aJson_IsReference) && c->child)
     {
-      next = c->next;
-      if (!(c->type & aJson_IsReference) && c->child)
-        {
-          deleteItem(c->child);
-        }
-      if ((c->type == aJson_String) && c->valuestring)
-        {
-          free(c->valuestring);
-        }
-      if (c->name)
-        {
-          free(c->name);
-        }
-      free(c);
-      c = next;
+      deleteItem(c->child);
     }
+    if ((c->type == aJson_String) && c->valuestring)
+    {
+      free(c->valuestring);
+    }
+    if (c->name)
+    {
+      free(c->name);
+    }
+    free(c);
+    c = next;
+  }
 }
 
 // Parse the input text to generate a number, and populate the result into item.
@@ -216,76 +214,76 @@ aJsonStream::parseNumber(aJsonObject *item)
 
   int in = this->getch();
   if (in == EOF)
-    {
-      return EOF;
-    }
+  {
+    return EOF;
+  }
   // It is easier to decode ourselves than to use sscnaf,
   // since so we can easier decide between int & double
   if (in == '-')
+  {
+    //it is a negative number
+    sign = -1;
+    in = this->getch();
+    if (in == EOF)
     {
-      //it is a negative number
-      sign = -1;
-      in = this->getch();
-      if (in == EOF)
-        {
-          return EOF;
-        }
+      return EOF;
     }
+  }
   if (in >= '0' && in <= '9')
     do
-      {
-        i = (i * 10) + (in - '0');
-        in = this->getch();
-      }
+    {
+      i = (i * 10) + (in - '0');
+      in = this->getch();
+    }
     while (in >= '0' && in <= '9'); // Number?
   //end of integer part � or isn't it?
   if (!(in == '.' || in == 'e' || in == 'E'))
-    {
-      item->valueint = i * (int) sign;
-      item->type = aJson_Int;
-    }
+  {
+    item->valueint = i * (int) sign;
+    item->type = aJson_Int;
+  }
   //ok it seems to be a double
   else
+  {
+    double n = (double) i;
+    int scale = 0;
+    int subscale = 0;
+    char signsubscale = 1;
+    if (in == '.')
     {
-      double n = (double) i;
-      int scale = 0;
-      int subscale = 0;
-      char signsubscale = 1;
-      if (in == '.')
-        {
-          in = this->getch();
-          do
-            {
-              n = (n * 10.0) + (in - '0'), scale--;
-              in = this->getch();
-            }
-          while (in >= '0' && in <= '9');
-        } // Fractional part?
-      if (in == 'e' || in == 'E') // Exponent?
-        {
-          in = this->getch();
-          if (in == '+')
-            {
-              in = this->getch();
-            }
-          else if (in == '-')
-            {
-              signsubscale = -1;
-              in = this->getch();
-            }
-          while (in >= '0' && in <= '9')
-            {
-              subscale = (subscale * 10) + (in - '0'); // Number?
-              in = this->getch();
-            }
-        }
-
-      n = sign * n * pow(10.0, ((double) scale + (double) subscale
-          * (double) signsubscale)); // number = +/- number.fraction * 10^+/- exponent
-
-      item->valuefloat = n;
-      item->type = aJson_Float;
+      in = this->getch();
+      do
+      {
+        n = (n * 10.0) + (in - '0'), scale--;
+        in = this->getch();
+      }
+      while (in >= '0' && in <= '9');
+    } // Fractional part?
+    if (in == 'e' || in == 'E') // Exponent?
+    {
+      in = this->getch();
+      if (in == '+')
+      {
+        in = this->getch();
+      }
+      else if (in == '-')
+      {
+        signsubscale = -1;
+        in = this->getch();
+      }
+      while (in >= '0' && in <= '9')
+      {
+        subscale = (subscale * 10) + (in - '0'); // Number?
+        in = this->getch();
+      }
     }
+
+    n = sign * n * pow(10.0, ((double) scale + (double) subscale
+                  * (double) signsubscale)); // number = +/- number.fraction * 10^+/- exponent
+
+    item->valuefloat = n;
+    item->type = aJson_Float;
+  }
   //preserve the last character for the next routine
   this->ungetch(in);
   return 0;
@@ -296,9 +294,9 @@ int
 aJsonStream::printInt(aJsonObject *item)
 {
   if (item != NULL)
-    {
-      return this->print(item->valueint, DEC);
-    }
+  {
+    return this->print(item->valueint, DEC);
+  }
   //printing nothing is ok
   return 0;
 }
@@ -307,34 +305,34 @@ int
 aJsonStream::printFloat(aJsonObject *item)
 {
   if (item != NULL)
-    {
-      double d = item->valuefloat;
-      if (d<0.0) {
-	  this->print("-");
-          d=-d;
-      }
-      //print the integer part
-      unsigned long integer_number = (unsigned long)d;
-      this->print(integer_number, DEC);
-      this->print(".");
-      //print the fractional part
-      double fractional_part = d - ((double)integer_number);
-      //we do a do-while since we want to print at least one zero
-      //we just support a certain number of digits after the '.'
-      int n = FLOAT_PRECISION;
-      fractional_part += 0.5/pow(10.0, FLOAT_PRECISION);
-      do {
-          //make the first digit non fractional(shift it before the '.'
-          fractional_part *= 10.0;
-          //create an int out of it
-          unsigned int digit = (unsigned int) fractional_part;
-          //print it
-	  this->print(digit, DEC);
-          //remove it from the number
-          fractional_part -= (double)digit;
-          n--;
-      } while ((fractional_part!=0) && (n>0));
+  {
+    double d = item->valuefloat;
+    if (d<0.0) {
+      this->print("-");
+      d=-d;
     }
+    //print the integer part
+    unsigned long integer_number = (unsigned long)d;
+    this->print(integer_number, DEC);
+    this->print(".");
+    //print the fractional part
+    double fractional_part = d - ((double)integer_number);
+    //we do a do-while since we want to print at least one zero
+    //we just support a certain number of digits after the '.'
+    int n = FLOAT_PRECISION;
+    fractional_part += 0.5/pow(10.0, FLOAT_PRECISION);
+    do {
+      //make the first digit non fractional(shift it before the '.'
+      fractional_part *= 10.0;
+      //create an int out of it
+      unsigned int digit = (unsigned int) fractional_part;
+      //print it
+      this->print(digit, DEC);
+      //remove it from the number
+      fractional_part -= (double)digit;
+      n--;
+    } while ((fractional_part!=0) && (n>0));
+  }
   //printing nothing is ok
   return 0;
 }
@@ -346,81 +344,81 @@ aJsonStream::parseString(aJsonObject *item)
   //we do not need to skip here since the first byte should be '\"'
   int in = this->getch();
   if (in != '\"')
-    {
-      return EOF; // not a string!
-    }
+  {
+    return EOF; // not a string!
+  }
   item->type = aJson_String;
   //allocate a buffer & track how long it is and how much we have read
   string_buffer* buffer = stringBufferCreate();
   if (buffer == NULL)
-    {
-      //unable to allocate the string
-      return EOF;
-    }
+  {
+    //unable to allocate the string
+    return EOF;
+  }
   in = this->getch();
   if (in == EOF)
-    {
-      stringBufferFree(buffer);
-      return EOF;
-    }
+  {
+    stringBufferFree(buffer);
+    return EOF;
+  }
   while (in != EOF)
+  {
+    while (in != '\"' && in >= 32)
     {
-      while (in != '\"' && in >= 32)
+      if (in != '\\')
+      {
+        stringBufferAdd((char) in, buffer);
+      }
+      else
+      {
+        in = this->getch();
+        if (in == EOF)
         {
-          if (in != '\\')
-            {
-              stringBufferAdd((char) in, buffer);
-            }
-          else
-            {
-              in = this->getch();
-              if (in == EOF)
-                {
-                  stringBufferFree(buffer);
-                  return EOF;
-                }
-              switch (in)
-                {
-              case '\\':
-                stringBufferAdd('\\', buffer);
-                break;
-              case '\"':
-                stringBufferAdd('\"', buffer);
-                break;
-              case '/':
-                stringBufferAdd('/', buffer);
-                break;
-              case 'b':
-                stringBufferAdd('\b', buffer);
-                break;
-              case 'f':
-                stringBufferAdd('\f', buffer);
-                break;
-              case 'n':
-                stringBufferAdd('\n', buffer);
-                break;
-              case 'r':
-                stringBufferAdd('\r', buffer);
-                break;
-              case 't':
-                stringBufferAdd('\t', buffer);
-                break;
-              default:
-                //we do not understand it so we skip it
-                break;
-                }
-            }
-          in = this->getch();
-          if (in == EOF)
-            {
-              stringBufferFree(buffer);
-              return EOF;
-            }
+          stringBufferFree(buffer);
+          return EOF;
         }
-      //the string ends here
-      item->valuestring = stringBufferToString(buffer);
-      return 0;
+        switch (in)
+        {
+        case '\\':
+          stringBufferAdd('\\', buffer);
+          break;
+        case '\"':
+          stringBufferAdd('\"', buffer);
+          break;
+        case '/':
+          stringBufferAdd('/', buffer);
+          break;
+        case 'b':
+          stringBufferAdd('\b', buffer);
+          break;
+        case 'f':
+          stringBufferAdd('\f', buffer);
+          break;
+        case 'n':
+          stringBufferAdd('\n', buffer);
+          break;
+        case 'r':
+          stringBufferAdd('\r', buffer);
+          break;
+        case 't':
+          stringBufferAdd('\t', buffer);
+          break;
+        default:
+          //we do not understand it so we skip it
+          break;
+        }
+      }
+      in = this->getch();
+      if (in == EOF)
+      {
+        stringBufferFree(buffer);
+        return EOF;
+      }
     }
+    //the string ends here
+    item->valuestring = stringBufferToString(buffer);
+    return 0;
+  }
   //we should not be here but it is ok
   return 0;
 }
@@ -432,50 +430,50 @@ aJsonStream::printStringPtr(const char *str)
   this->print("\"");
   char* ptr = (char*) str;
   if (ptr != NULL)
+  {
+    while (*ptr != 0)
     {
-      while (*ptr != 0)
+      if ((unsigned char) *ptr > 31 && *ptr != '\"' && *ptr != '\\')
+      {
+        this->print(*ptr);
+        ptr++;
+      }
+      else
+      {
+        this->print('\\');
+        switch (*ptr++)
         {
-          if ((unsigned char) *ptr > 31 && *ptr != '\"' && *ptr != '\\')
-            {
-	      this->print(*ptr);
-              ptr++;
-            }
-          else
-            {
-	      this->print('\\');
-              switch (*ptr++)
-                {
-              case '\\':
-		this->print('\\');
-                break;
-              case '\"':
-		this->print('\"');
-                break;
-              case '/':
-		this->print('/');
-                break;
-              case '\b':
-		this->print('b');
-                break;
-              case '\f':
-		this->print('f');
-                break;
-              case '\n':
-		this->print('n');
-                break;
-              case '\r':
-		this->print('r');
-                break;
-              case '\t':
-		this->print('t');
-                break;
-              default:
-                break; // eviscerate with prejudice.
-                }
-            }
-
+        case '\\':
+          this->print('\\');
+          break;
+        case '\"':
+          this->print('\"');
+          break;
+        case '/':
+          this->print('/');
+          break;
+        case '\b':
+          this->print('b');
+          break;
+        case '\f':
+          this->print('f');
+          break;
+        case '\n':
+          this->print('n');
+          break;
+        case '\r':
+          this->print('r');
+          break;
+        case '\t':
+          this->print('t');
+          break;
+        default:
+          break; // eviscerate with prejudice.
         }
+      }
+
     }
+  }
   this->print('\"');
   return 0;
 }
@@ -493,14 +491,14 @@ aJsonStream::skip()
 {
   int in = this->getch();
   while (in != EOF && (in <= 32))
-    {
-      in = this->getch();
-    }
+  {
+    in = this->getch();
+  }
   if (in != EOF)
-    {
-      this->ungetch(in);
-      return 0;
-    }
+  {
+    this->ungetch(in);
+    return 0;
+  }
   return EOF;
 }
 
@@ -517,7 +515,6 @@ aJsonStream::flush()
   }
   return EOF;
 }
-
 
 // Parse an object - create a new root, and populate.
 aJsonObject*
@@ -540,19 +537,19 @@ aJsonObject*
 aJsonClass::parse(aJsonStream* stream, char** filter)
 {
   if (stream == NULL)
-    {
-      return NULL;
-    }
+  {
+    return NULL;
+  }
   aJsonObject *c = newItem();
   if (!c)
     return NULL; /* memory fail */
 
   stream->skip();
   if (stream->parseValue(c, filter) == EOF)
-    {
-      deleteItem(c);
-      return NULL;
-    }
+  {
+    deleteItem(c);
+    return NULL;
+  }
   return c;
 }
 
@@ -568,9 +565,9 @@ aJsonClass::print(aJsonObject* item)
 {
   char* outBuf = (char*) malloc(PRINT_BUFFER_LEN); /* XXX: Dynamic size. */
   if (outBuf == NULL)
-    {
-      return NULL;
-    }
+  {
+    return NULL;
+  }
   aJsonStringStream stringStream(NULL, outBuf, PRINT_BUFFER_LEN);
   print(item, &stringStream);
   return outBuf;
@@ -581,84 +578,84 @@ int
 aJsonStream::parseValue(aJsonObject *item, char** filter)
 {
   if (this->skip() == EOF)
-    {
-      return EOF;
-    }
+  {
+    return EOF;
+  }
   //read the first byte from the stream
   int in = this->getch();
   if (in == EOF)
+  {
+    return EOF;
+  }
+  this->ungetch(in);
+  if (in == '\"')
+  {
+    return this->parseString(item);
+  }
+  else if (in == '-' || (in >= '0' && in <= '9'))
+  {
+    return this->parseNumber(item);
+  }
+  else if (in == '[')
+  {
+    return this->parseArray(item, filter);
+  }
+  else if (in == '{')
+  {
+    return this->parseObject(item, filter);
+  }
+  //it can only be null, false or true
+  else if (in == 'n')
+  {
+    //a buffer to read the value
+    char buffer[] =
+    { 0, 0, 0, 0 };
+    if (this->readBytes((uint8_t*) buffer, 4) != 4)
     {
       return EOF;
     }
-  this->ungetch(in);
-  if (in == '\"')
+    if (!strncmp(buffer, "null", 4))
     {
-      return this->parseString(item);
+      item->type = aJson_NULL;
+      return 0;
     }
-  else if (in == '-' || (in >= '0' && in <= '9'))
+    else
     {
-      return this->parseNumber(item);
+      return EOF;
     }
-  else if (in == '[')
-    {
-      return this->parseArray(item, filter);
-    }
-  else if (in == '{')
-    {
-      return this->parseObject(item, filter);
-    }
-  //it can only be null, false or true
-  else if (in == 'n')
-    {
-      //a buffer to read the value
-      char buffer[] =
-        { 0, 0, 0, 0 };
-      if (this->readBytes((uint8_t*) buffer, 4) != 4)
-        {
-          return EOF;
-        }
-      if (!strncmp(buffer, "null", 4))
-        {
-          item->type = aJson_NULL;
-          return 0;
-        }
-      else
-        {
-          return EOF;
-        }
-    }
+  }
   else if (in == 'f')
+  {
+    //a buffer to read the value
+    char buffer[] =
+    { 0, 0, 0, 0, 0 };
+    if (this->readBytes((uint8_t*) buffer, 5) != 5)
     {
-      //a buffer to read the value
-      char buffer[] =
-        { 0, 0, 0, 0, 0 };
-      if (this->readBytes((uint8_t*) buffer, 5) != 5)
-        {
-          return EOF;
-        }
-      if (!strncmp(buffer, "false", 5))
-        {
-          item->type = aJson_Boolean;
-          item->valuebool = false;
-          return 0;
-        }
+      return EOF;
     }
+    if (!strncmp(buffer, "false", 5))
+    {
+      item->type = aJson_Boolean;
+      item->valuebool = false;
+      return 0;
+    }
+  }
   else if (in == 't')
+  {
+    //a buffer to read the value
+    char buffer[] =
+    { 0, 0, 0, 0 };
+    if (this->readBytes((uint8_t*) buffer, 4) != 4)
     {
-      //a buffer to read the value
-      char buffer[] =
-        { 0, 0, 0, 0 };
-      if (this->readBytes((uint8_t*) buffer, 4) != 4)
-        {
-          return EOF;
-        }
-      if (!strncmp(buffer, "true", 4))
-        {
-          item->type = aJson_Boolean;
-          item->valuebool = true;
-          return 0;
-        }
+      return EOF;
     }
+    if (!strncmp(buffer, "true", 4))
+    {
+      item->type = aJson_Boolean;
+      item->valuebool = true;
+      return 0;
+    }
+  }
 
   return EOF; // failure.
 }
@@ -669,20 +666,20 @@ aJsonStream::printValue(aJsonObject *item)
 {
   int result = 0;
   if (item == NULL)
-    {
-      //nothing to do
-      return 0;
-    }
+  {
+    //nothing to do
+    return 0;
+  }
   switch (item->type)
-    {
+  {
   case aJson_NULL:
     result = this->print("null");
     break;
   case aJson_Boolean:
-    if(item->valuebool){
+    if(item->valuebool) {
       result = this->print("true");
     }
-    else{
+    else {
       result = this->print("false");
     }
     break;
@@ -701,7 +698,7 @@ aJsonStream::printValue(aJsonObject *item)
   case aJson_Object:
     result = this->printObject(item);
     break;
-    }
+  }
   return result;
 }
 
@@ -711,56 +708,56 @@ aJsonStream::parseArray(aJsonObject *item, char** filter)
 {
   int in = this->getch();
   if (in != '[')
-    {
-      return EOF; // not an array!
-    }
+  {
+    return EOF; // not an array!
+  }
 
   item->type = aJson_Array;
   this->skip();
   in = this->getch();
   //check for empty array
   if (in == ']')
-    {
-      return 0; // empty array.
-    }
+  {
+    return 0; // empty array.
+  }
   //now put back the last character
   this->ungetch(in);
   aJsonObject *child;
   char first = -1;
   while ((first) || (in == ','))
+  {
+    aJsonObject *new_item = aJsonClass::newItem();
+    if (new_item == NULL)
     {
-      aJsonObject *new_item = aJsonClass::newItem();
-      if (new_item == NULL)
-        {
-          return EOF; // memory fail
-        }
-      if (first)
-        {
-          item->child = new_item;
-          first = 0;
-        }
-      else
-        {
-          child->next = new_item;
-          new_item->prev = child;
-        }
-      child = new_item;
-      this->skip();
-      if (this->parseValue(child, filter))
-        {
-          return EOF;
-        }
-      this->skip();
-      in = this->getch();
+      return EOF; // memory fail
     }
+    if (first)
+    {
+      item->child = new_item;
+      first = 0;
+    }
+    else
+    {
+      child->next = new_item;
+      new_item->prev = child;
+    }
+    child = new_item;
+    this->skip();
+    if (this->parseValue(child, filter))
+    {
+      return EOF;
+    }
+    this->skip();
+    in = this->getch();
+  }
   if (in == ']')
-    {
-      return 0; // end of array
-    }
+  {
+    return 0; // end of array
+  }
   else
-    {
-      return EOF; // malformed.
-    }
+  {
+    return EOF; // malformed.
+  }
 }
 
 // Render an array to text
@@ -768,34 +765,34 @@ int
 aJsonStream::printArray(aJsonObject *item)
 {
   if (item == NULL)
-    {
-      //nothing to do
-      return 0;
-    }
+  {
+    //nothing to do
+    return 0;
+  }
   aJsonObject *child = item->child;
   if (this->print('[') == EOF)
-    {
-      return EOF;
-    }
+  {
+    return EOF;
+  }
   while (child)
-    {
-      if (this->printValue(child) == EOF)
-        {
-          return EOF;
-        }
-      child = child->next;
-      if (child)
-        {
-          if (this->print(',') == EOF)
-            {
-              return EOF;
-            }
-        }
-    }
-  if (this->print(']') == EOF)
+  {
+    if (this->printValue(child) == EOF)
     {
       return EOF;
     }
+    child = child->next;
+    if (child)
+    {
+      if (this->print(',') == EOF)
+      {
+        return EOF;
+      }
+    }
+  }
+  if (this->print(']') == EOF)
+  {
+    return EOF;
+  }
   return 0;
 }
 
@@ -805,73 +802,73 @@ aJsonStream::parseObject(aJsonObject *item, char** filter)
 {
   int in = this->getch();
   if (in != '{')
-    {
-      return EOF; // not an object!
-    }
+  {
+    return EOF; // not an object!
+  }
 
   item->type = aJson_Object;
   this->skip();
   //check for an empty object
   in = this->getch();
   if (in == '}')
-    {
-      return 0; // empty object.
-    }
+  {
+    return 0; // empty object.
+  }
   //preserve the char for the next parser
   this->ungetch(in);
 
   aJsonObject* child;
   char first = -1;
   while ((first) || (in == ','))
+  {
+    aJsonObject* new_item = aJsonClass::newItem();
+    if (new_item == NULL)
     {
-      aJsonObject* new_item = aJsonClass::newItem();
-      if (new_item == NULL)
-        {
-          return EOF; // memory fail
-        }
-      if (first)
-        {
-          first = 0;
-          item->child = new_item;
-        }
-      else
-        {
-          child->next = new_item;
-          new_item->prev = child;
-        }
-      child = new_item;
-      this->skip();
-      if (this->parseString(child) == EOF)
-        {
-          return EOF;
-        }
-      this->skip();
-      child->name = child->valuestring;
-      child->valuestring = NULL;
-
-      in = this->getch();
-      if (in != ':')
-        {
-          return EOF; // fail!
-        }
-      // skip any spacing, get the value.
-      this->skip();
-      if (this->parseValue(child, filter) == EOF)
-        {
-          return EOF;
-        }
-      this->skip();
-      in = this->getch();
+      return EOF; // memory fail
     }
+    if (first)
+    {
+      first = 0;
+      item->child = new_item;
+    }
+    else
+    {
+      child->next = new_item;
+      new_item->prev = child;
+    }
+    child = new_item;
+    this->skip();
+    if (this->parseString(child) == EOF)
+    {
+      return EOF;
+    }
+    this->skip();
+    child->name = child->valuestring;
+    child->valuestring = NULL;
+
+    in = this->getch();
+    if (in != ':')
+    {
+      return EOF; // fail!
+    }
+    // skip any spacing, get the value.
+    this->skip();
+    if (this->parseValue(child, filter) == EOF)
+    {
+      return EOF;
+    }
+    this->skip();
+    in = this->getch();
+  }
 
   if (in == '}')
-    {
-      return 0; // end of array
-    }
+  {
+    return 0; // end of array
+  }
   else
-    {
-      return EOF; // malformed.
-    }
+  {
+    return EOF; // malformed.
+  }
 }
 
 // Render an object to text.
@@ -879,42 +876,42 @@ int
 aJsonStream::printObject(aJsonObject *item)
 {
   if (item == NULL)
-    {
-      //nothing to do
-      return 0;
-    }
+  {
+    //nothing to do
+    return 0;
+  }
   aJsonObject *child = item->child;
   if (this->print('{') == EOF)
-    {
-      return EOF;
-    }
+  {
+    return EOF;
+  }
   while (child)
-    {
-      if (this->printStringPtr(child->name) == EOF)
-        {
-          return EOF;
-        }
-      if (this->print(':') == EOF)
-        {
-          return EOF;
-        }
-      if (this->printValue(child) == EOF)
-        {
-          return EOF;
-        }
-      child = child->next;
-      if (child)
-        {
-          if (this->print(',') == EOF)
-            {
-              return EOF;
-            }
-        }
-    }
-  if (this->print('}') == EOF)
+  {
+    if (this->printStringPtr(child->name) == EOF)
     {
       return EOF;
     }
+    if (this->print(':') == EOF)
+    {
+      return EOF;
+    }
+    if (this->printValue(child) == EOF)
+    {
+      return EOF;
+    }
+    child = child->next;
+    if (child)
+    {
+      if (this->print(',') == EOF)
+      {
+        return EOF;
+      }
+    }
+  }
+  if (this->print('}') == EOF)
+  {
+    return EOF;
+  }
   return 0;
 }
 
@@ -928,6 +925,7 @@ aJsonClass::getArraySize(aJsonObject *array)
     i++, c = c->next;
   return i;
 }
+
 aJsonObject*
 aJsonClass::getArrayItem(aJsonObject *array, unsigned char item)
 {
@@ -936,6 +934,7 @@ aJsonClass::getArrayItem(aJsonObject *array, unsigned char item)
     item--, c = c->next;
   return c;
 }
+
 aJsonObject*
 aJsonClass::getObjectItem(aJsonObject *object, const char *string)
 {
@@ -952,6 +951,7 @@ aJsonClass::suffixObject(aJsonObject *prev, aJsonObject *item)
   prev->next = item;
   item->prev = prev;
 }
+
 // Utility for handling references.
 aJsonObject*
 aJsonClass::createReference(aJsonObject *item)
@@ -974,19 +974,20 @@ aJsonClass::addItemToArray(aJsonObject *array, aJsonObject *item)
   if (!item)
     return;
   if (!c)
-    {
-      array->child = item;
-    }
+  {
+    array->child = item;
+  }
   else
-    {
-      while (c && c->next)
-        c = c->next;
-      suffixObject(c, item);
-    }
+  {
+    while (c && c->next)
+      c = c->next;
+    suffixObject(c, item);
+  }
 }
+
 void
 aJsonClass::addItemToObject(aJsonObject *object, const char *string,
-    aJsonObject *item)
+              aJsonObject *item)
 {
   if (!item)
     return;
@@ -995,14 +996,16 @@ aJsonClass::addItemToObject(aJsonObject *object, const char *string,
   item->name = strdup(string);
   addItemToArray(object, item);
 }
+
 void
 aJsonClass::addItemReferenceToArray(aJsonObject *array, aJsonObject *item)
 {
   addItemToArray(array, createReference(item));
 }
+
 void
 aJsonClass::addItemReferenceToObject(aJsonObject *object, const char *string,
-    aJsonObject *item)
+                   aJsonObject *item)
 {
   addItemToObject(object, string, createReference(item));
 }
@@ -1024,11 +1027,13 @@ aJsonClass::detachItemFromArray(aJsonObject *array, unsigned char which)
   c->prev = c->next = 0;
   return c;
 }
+
 void
 aJsonClass::deleteItemFromArray(aJsonObject *array, unsigned char which)
 {
   deleteItem(detachItemFromArray(array, which));
 }
+
 aJsonObject*
 aJsonClass::detachItemFromObject(aJsonObject *object, const char *string)
 {
@@ -1040,6 +1045,7 @@ aJsonClass::detachItemFromObject(aJsonObject *object, const char *string)
     return detachItemFromArray(object, i);
   return 0;
 }
+
 void
 aJsonClass::deleteItemFromObject(aJsonObject *object, const char *string)
 {
@@ -1049,7 +1055,7 @@ aJsonClass::deleteItemFromObject(aJsonObject *object, const char *string)
 // Replace array/object items with new ones.
 void
 aJsonClass::replaceItemInArray(aJsonObject *array, unsigned char which,
-    aJsonObject *newitem)
+                 aJsonObject *newitem)
 {
   aJsonObject *c = array->child;
   while (c && which > 0)
@@ -1067,19 +1073,20 @@ aJsonClass::replaceItemInArray(aJsonObject *array, unsigned char which,
   c->next = c->prev = 0;
   deleteItem(c);
 }
+
 void
 aJsonClass::replaceItemInObject(aJsonObject *object, const char *string,
-    aJsonObject *newitem)
+                aJsonObject *newitem)
 {
   unsigned char i = 0;
   aJsonObject *c = object->child;
   while (c && strcasecmp(c->name, string))
     i++, c = c->next;
   if (c)
-    {
-      newitem->name = strdup(string);
-      replaceItemInArray(object, i, newitem);
-    }
+  {
+    newitem->name = strdup(string);
+    replaceItemInArray(object, i, newitem);
+  }
 }
 
 // Create basic types:
@@ -1096,11 +1103,11 @@ aJsonObject*
 aJsonClass::createItem(bool b)
 {
   aJsonObject *item = newItem();
-  if (item){
+  if (item) {
     item->type = aJson_Boolean;
     item->valuebool = b;
   }
-    
+
   return item;
 }
 
@@ -1109,10 +1116,10 @@ aJsonClass::createItem(char b)
 {
   aJsonObject *item = newItem();
   if (item)
-    {
-      item->type = aJson_Boolean;
-      item->valuebool = b ? -1 : 0;
-    }
+  {
+    item->type = aJson_Boolean;
+    item->valuebool = b ? -1 : 0;
+  }
   return item;
 }
 
@@ -1121,10 +1128,10 @@ aJsonClass::createItem(int num)
 {
   aJsonObject *item = newItem();
   if (item)
-    {
-      item->type = aJson_Int;
-      item->valueint = (int) num;
-    }
+  {
+    item->type = aJson_Int;
+    item->valueint = (int) num;
+  }
   return item;
 }
 
@@ -1133,10 +1140,10 @@ aJsonClass::createItem(double num)
 {
   aJsonObject *item = newItem();
   if (item)
-    {
-      item->type = aJson_Float;
-      item->valuefloat = num;
-    }
+  {
+    item->type = aJson_Float;
+    item->valuefloat = num;
+  }
   return item;
 }
 
@@ -1145,10 +1152,10 @@ aJsonClass::createItem(const char *string)
 {
   aJsonObject *item = newItem();
   if (item)
-    {
-      item->type = aJson_String;
-      item->valuestring = strdup(string);
-    }
+  {
+    item->type = aJson_String;
+    item->valuestring = strdup(string);
+  }
   return item;
 }
 
@@ -1160,6 +1167,7 @@ aJsonClass::createArray()
     item->type = aJson_Array;
   return item;
 }
+
 aJsonObject*
 aJsonClass::createObject()
 {
@@ -1176,14 +1184,14 @@ aJsonClass::createIntArray(int *numbers, unsigned char count)
   unsigned char i;
   aJsonObject *n = 0, *p = 0, *a = createArray();
   for (i = 0; a && i < count; i++)
-    {
-      n = createItem(numbers[i]);
-      if (!i)
-        a->child = n;
-      else
-        suffixObject(p, n);
-      p = n;
-    }
+  {
+    n = createItem(numbers[i]);
+    if (!i)
+      a->child = n;
+    else
+      suffixObject(p, n);
+    p = n;
+  }
   return a;
 }
 
@@ -1193,14 +1201,14 @@ aJsonClass::createFloatArray(double *numbers, unsigned char count)
   unsigned char i;
   aJsonObject *n = 0, *p = 0, *a = createArray();
   for (i = 0; a && i < count; i++)
-    {
-      n = createItem(numbers[i]);
-      if (!i)
-        a->child = n;
-      else
-        suffixObject(p, n);
-      p = n;
-    }
+  {
+    n = createItem(numbers[i]);
+    if (!i)
+      a->child = n;
+    else
+      suffixObject(p, n);
+    p = n;
+  }
   return a;
 }
 
@@ -1210,14 +1218,14 @@ aJsonClass::createDoubleArray(double *numbers, unsigned char count)
   unsigned char i;
   aJsonObject *n = 0, *p = 0, *a = createArray();
   for (i = 0; a && i < count; i++)
-    {
-      n = createItem(numbers[i]);
-      if (!i)
-        a->child = n;
-      else
-        suffixObject(p, n);
-      p = n;
-    }
+  {
+    n = createItem(numbers[i]);
+    if (!i)
+      a->child = n;
+    else
+      suffixObject(p, n);
+    p = n;
+  }
   return a;
 }
 
@@ -1227,14 +1235,14 @@ aJsonClass::createStringArray(const char **strings, unsigned char count)
   unsigned char i;
   aJsonObject *n = 0, *p = 0, *a = createArray();
   for (i = 0; a && i < count; i++)
-    {
-      n = createItem(strings[i]);
-      if (!i)
-        a->child = n;
-      else
-        suffixObject(p, n);
-      p = n;
-    }
+  {
+    n = createItem(strings[i]);
+    if (!i)
+      a->child = n;
+    else
+      suffixObject(p, n);
+    p = n;
+  }
   return a;
 }
 
@@ -1264,7 +1272,7 @@ aJsonClass::addNumberToObject(aJsonObject* object, const char* name, double n)
 
 void
 aJsonClass::addStringToObject(aJsonObject* object, const char* name,
-    const char* s)
+                const char* s)
 {
   addItemToObject(object, name, createItem(s));
 }
