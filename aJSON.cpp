@@ -1322,10 +1322,12 @@ void
 aJsonClass::useDictionary(char** dictionary)
 {
   this->dictionary = dictionary;
-  if (dictionary == NULL){
+  if (dictionary == NULL)
+  {
     this->dictionaryLenght = 0;
   } 
-  else {
+  else 
+  {
     this->dictionaryLenght = -1;
     while (this->dictionary[++this->dictionaryLenght] != NULL) {
     /* do nothing */
