@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <float.h>
 #include <ctype.h>
-#ifdef __AVR__
+#if defined(__AVR__) || defined(TEENSYDUINO)
 #include <avr/pgmspace.h>
 #else
 #include <pgmspace.h>
