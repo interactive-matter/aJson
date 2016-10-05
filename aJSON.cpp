@@ -43,6 +43,7 @@
 #endif
 #include "aJSON.h"
 #include "utility/stringbuffer.h"
+#include <stdio.h>
 
 /******************************************************************************
  * Definitions
@@ -81,6 +82,7 @@ aJsonStream::getch()
       bucket = EOF;
       return ret;
     }
+
   // In case input was malformed - can happen, this is the
   // real world, we can end up in a situation where the parser
   // would expect another character and end up stuck on
@@ -95,6 +97,22 @@ aJsonStream::ungetch(char ch)
 {
   bucket = ch;
 }
+
+
+int
+aJsonFileStream::getch()
+{
+  if (bucket != EOF)
+    {
+      int ret = bucket;
+      bucket = EOF;
+      return ret;
+    }
+  return fgetc(fl);
+}
+
+
+
 
 size_t
 aJsonStream::write(uint8_t ch)
