@@ -167,6 +167,20 @@ private:
 	size_t inbuf_len, outbuf_len;
 };
 
+class aJsonFileStream : public aJsonStream {
+public:
+        aJsonFileStream(FILE* _fl)
+                : aJsonStream(NULL)
+        {
+                fl=_fl;
+        }
+
+
+private:
+        virtual int getch();
+        FILE* fl;
+};
+
 class aJsonClass {
 	/******************************************************************************
 	 * Constructors
