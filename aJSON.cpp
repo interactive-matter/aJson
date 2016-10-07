@@ -44,7 +44,7 @@
 #include "aJSON.h"
 #include "utility/stringbuffer.h"
 #include <stdio.h>
-
+#include <EEPROM.h>
 /******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -112,11 +112,54 @@ aJsonFileStream::getch()
 }
 
 
+int
+aJsonEEPROMStream::getch()
+{ char c;
+  if (bucket != EOF)
+    {
+      int ret = bucket;
+      bucket = EOF;
+      return ret;
+    }
+    EEPROM.get(addr+offset++,c);
+  return c;
+}
+
+bool
+aJsonEEPROMStream::available()
+{
+  if (bucket != EOF)
+    return true;
+  while (addr+offset<EEPROM.length())
+    {
+      /* Make an effort to skip whitespace. */
+      int ch = this->getch();
+      
+      if (ch > 32)
+       {
+         this->ungetch(ch);
+         return true;
+       }
+    }
+  return false;
+  }    
+
+
+size_t
+aJsonEEPROMStream::write(uint8_t ch)
+{
+  if (addr+offset>=EEPROM.length())
+    {
+      return 0;
+    }
+EEPROM.update(addr+offset++,(char)ch);
+  return 1;
+}
 
 
 size_t
 aJsonStream::write(uint8_t ch)
-{
+{ 
   return stream()->write(ch);
 }
 
@@ -191,7 +234,6 @@ aJsonStringStream::write(uint8_t ch)
   *outbuf = 0;
   return 1;
 }
-
 
 // Internal constructor.
 aJsonObject*
