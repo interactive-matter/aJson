@@ -349,8 +349,5 @@ int getConfig()
       Serial.println(" try again in 5 seconds");
       return -11;
                 }
-
-
-
   return 2;
 }
