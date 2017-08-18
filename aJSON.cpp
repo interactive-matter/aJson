@@ -307,6 +307,17 @@ aJsonStream::printInt(aJsonObject *item)
 }
 
 int
+aJsonStream::printLong(aJsonObject *item)
+{
+	if (item != NULL)
+	{
+		return this->print(item->valuelong, DEC);
+	}
+	//printing nothing is ok
+	return 0;
+}
+
+int
 aJsonStream::printFloat(aJsonObject *item)
 {
   if (item != NULL)
@@ -510,7 +521,7 @@ aJsonStream::skip()
 // Utility to flush our buffer in case it contains garbage
 // since the parser will return the buffer untouched if it
 // cannot understand it.
-int
+void
 aJsonStream::flush()
 {
   int in = this->getch();
@@ -518,7 +529,7 @@ aJsonStream::flush()
   {
     in = this->getch();
   }
-  return EOF;
+  //return EOF;
 }
 
 
@@ -692,6 +703,9 @@ aJsonStream::printValue(aJsonObject *item)
   case aJson_Int:
     result = this->printInt(item);
     break;
+  case aJson_Long:
+	result = this->printLong(item);
+	break;
   case aJson_Float:
     result = this->printFloat(item);
     break;
@@ -1132,6 +1146,19 @@ aJsonClass::createItem(int num)
 }
 
 aJsonObject*
+aJsonClass::createItem(unsigned long num)
+{
+	aJsonObject *item = newItem();
+	if (item)
+	{
+		item->type = aJson_Long;
+		item->valueint = (unsigned long)num;
+	}
+	return item;
+}
+
+
+aJsonObject*
 aJsonClass::createItem(double num)
 {
   aJsonObject *item = newItem();
@@ -1259,6 +1286,11 @@ aJsonClass::addNumberToObject(aJsonObject* object, const char* name, int n)
   addItemToObject(object, name, createItem(n));
 }
 
+void
+aJsonClass::addNumberToObject(aJsonObject* object, const char* name, unsigned long n)
+{
+	addItemToObject(object, name, createItem(n));
+}
 void
 aJsonClass::addNumberToObject(aJsonObject* object, const char* name, double n)
 {

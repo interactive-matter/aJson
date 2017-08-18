@@ -37,10 +37,11 @@
 #define aJson_NULL 0
 #define aJson_Boolean 1
 #define aJson_Int 2
-#define aJson_Float 3
-#define aJson_String 4
-#define aJson_Array 5
-#define aJson_Object 6
+#define aJson_Long 3
+#define aJson_Float 4
+#define aJson_String 5
+#define aJson_Array 6
+#define aJson_Object 7
 
 #define aJson_IsReference 128
 
@@ -62,6 +63,7 @@ typedef struct aJsonObject {
 		char *valuestring; // The item's string, if type==aJson_String
 		char valuebool; //the items value for true & false
 		int valueint; // The item's value, if type==aJson_Int
+		long valuelong; // The item's value, if type==aJson_Int
 		double valuefloat; // The item's value, if type==aJson_Float
 	};
 } aJsonObject;
@@ -82,6 +84,7 @@ public:
 
 	int parseNumber(aJsonObject *item);
 	int printInt(aJsonObject *item);
+	int printLong(aJsonObject *item);
 	int printFloat(aJsonObject *item);
 
 	int parseString(aJsonObject *item);
@@ -89,7 +92,8 @@ public:
 	int printString(aJsonObject *item);
 
 	int skip();
-	int flush();
+	void flush();
+	//virtual void flush();
 
 	int parseValue(aJsonObject *item, char** filter);
 	int printValue(aJsonObject *item);
@@ -200,6 +204,7 @@ public:
 	aJsonObject* createItem(bool b);
 	aJsonObject* createItem(char b);
 	aJsonObject* createItem(int num);
+	aJsonObject* createItem(unsigned long num);
 	aJsonObject* createItem(double num);
 	aJsonObject* createItem(const char *string);
 	aJsonObject* createArray();
@@ -235,7 +240,8 @@ public:
 	void addNullToObject(aJsonObject* object, const char* name);
 	void addBooleanToObject(aJsonObject* object, const char* name, bool b);
 	void addNumberToObject(aJsonObject* object, const char* name, int n);
-        void addNumberToObject(aJsonObject* object, const char* name, double n);
+	void addNumberToObject(aJsonObject* object, const char* name, unsigned long n);
+    void addNumberToObject(aJsonObject* object, const char* name, double n);
 	void addStringToObject(aJsonObject* object, const char* name,
 					const char* s);
 
