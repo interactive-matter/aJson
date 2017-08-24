@@ -38,6 +38,8 @@
 #include <ctype.h>
 #ifdef __AVR__
 #include <avr/pgmspace.h>
+#elif defined(__arm__)
+#include <sam/pgmspace.h>
 #else
 #include <pgmspace.h>
 #endif
