@@ -106,6 +106,8 @@ To render the object back to a string you can simply call
 
 ```c
  char *json_String=aJson.print(jsonObject);
+ Serial.println(aJsonPtr); 
+ free(aJsonPtr); // To free memory allocated by aJSON.print()
 ```
 
 Finished? Delete the root (this takes care of everything else).
