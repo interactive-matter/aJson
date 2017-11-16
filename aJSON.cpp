@@ -39,12 +39,17 @@
 #ifdef __AVR__
 #include <avr/pgmspace.h>
 #else
-#include <pgmspace.h>
+//#include <pgmspace.h>
 #endif
 #include "aJSON.h"
 #include "utility/stringbuffer.h"
 #include <stdio.h>
+#if defined(__SAM3X8E__)
+#include <DueFlashStorage.h>
+DueFlashStorage EEPROM;
+#else
 #include <EEPROM.h>
+#endif
 /******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -121,7 +126,7 @@ aJsonEEPROMStream::getch()
       bucket = EOF;
       return ret;
     }
-    EEPROM.get(addr+offset++,c);
+    c=EEPROM.read(addr+offset++);
   return c;
 }
 
@@ -130,7 +135,11 @@ aJsonEEPROMStream::available()
 {
   if (bucket != EOF)
     return true;
+#if defined(__SAM3X8E__)
+  while (1)  ///fix it
+#else
   while (addr+offset<EEPROM.length())
+#endif    
     {
       /* Make an effort to skip whitespace. */
       int ch = this->getch();
@@ -148,11 +157,16 @@ aJsonEEPROMStream::available()
 size_t
 aJsonEEPROMStream::write(uint8_t ch)
 {
-  if (addr+offset>=EEPROM.length())
+#if defined(__SAM3X8E__)
+  while (1)  ///fix it
+#else
+  while (addr+offset<EEPROM.length())
+#endif
+
     {
       return 0;
     }
-EEPROM.update(addr+offset++,(char)ch);
+EEPROM.write(addr+offset++,(char)ch);
   return 1;
 }
 
@@ -570,7 +584,7 @@ aJsonStream::skip()
 // Utility to flush our buffer in case it contains garbage
 // since the parser will return the buffer untouched if it
 // cannot understand it.
-int
+void
 aJsonStream::flush()
 {
   int in = this->getch();
@@ -578,7 +592,7 @@ aJsonStream::flush()
   {
     in = this->getch();
   }
-  return EOF;
+  return;// EOF;
 }
 
 

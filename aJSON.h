@@ -61,8 +61,8 @@ typedef struct aJsonObject {
 	union {
 		char *valuestring; // The item's string, if type==aJson_String
 		char valuebool; //the items value for true & false
-		int valueint; // The item's value, if type==aJson_Int
-		double valuefloat; // The item's value, if type==aJson_Float
+		long int valueint; // The item's value, if type==aJson_Int
+		float valuefloat; // The item's value, if type==aJson_Float
 	};
 } aJsonObject;
 
@@ -89,7 +89,7 @@ public:
 	int printString(aJsonObject *item);
 
 	int skip();
-	int flush();
+	void flush();
 
 	int parseValue(aJsonObject *item, char** filter);
 	int printValue(aJsonObject *item);
