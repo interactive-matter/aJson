@@ -36,17 +36,19 @@
 #include <stdlib.h>
 #include <float.h>
 #include <ctype.h>
-#ifdef __AVR__
+#ifdef __AVR__ 
 #include <avr/pgmspace.h>
+#elif defined(__arm__) 
+#include <sam/pgmspace.h>
 #else
-//#include <pgmspace.h>
+#include <pgmspace.h>
 #endif
 #include "aJSON.h"
 #include "utility/stringbuffer.h"
 #include <stdio.h>
 #if defined(__SAM3X8E__)
 #include <DueFlashStorage.h>
-DueFlashStorage EEPROM;
+extern DueFlashStorage EEPROM;
 #else
 #include <EEPROM.h>
 #endif
@@ -133,16 +135,19 @@ aJsonEEPROMStream::getch()
 bool
 aJsonEEPROMStream::available()
 {
+  int ch =0;
   if (bucket != EOF)
     return true;
+
 #if defined(__SAM3X8E__)
-  while (1)  ///fix it
+  while ((ch!=EOF) && (offset<32000))  ///fix it
 #else
   while (addr+offset<EEPROM.length())
 #endif    
+
     {
       /* Make an effort to skip whitespace. */
-      int ch = this->getch();
+      ch = this->getch();
       
       if (ch > 32)
        {
@@ -157,17 +162,8 @@ aJsonEEPROMStream::available()
 size_t
 aJsonEEPROMStream::write(uint8_t ch)
 {
-#if defined(__SAM3X8E__)
-  while (1)  ///fix it
-#else
-  while (addr+offset<EEPROM.length())
-#endif
-
-    {
-      return 0;
-    }
 EEPROM.write(addr+offset++,(char)ch);
-  return 1;
+return 1;
 }
 
 
