@@ -432,7 +432,7 @@ aJsonStream::parseString(aJsonObject *item)
 int
 aJsonStream::printStringPtr(const char *str)
 {
-  this->print("\"");
+  this->print('"');
   char* ptr = (char*) str;
   if (ptr != NULL)
     {
