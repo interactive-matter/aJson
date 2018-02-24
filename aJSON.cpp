@@ -103,6 +103,12 @@ aJsonStream::write(uint8_t ch)
 }
 
 size_t
+aJsonStream::write(const uint8_t *str, size_t len)
+{
+  return stream()->write(str, len);
+}
+
+size_t
 aJsonStream::readBytes(uint8_t *buffer, size_t len)
 {
   for (size_t i = 0; i < len; i++)
@@ -432,10 +438,30 @@ aJsonStream::parseString(aJsonObject *item)
 int
 aJsonStream::printStringPtr(const char *str)
 {
-  this->print("\"");
+  this->print('"');
   char* ptr = (char*) str;
-  if (ptr != NULL)
+  if (ptr != NULL && *ptr != '\0')
     {
+      char* check = ptr;
+      bool hasEscapes = false;
+      while (*check != 0)
+        {
+          if ((unsigned char) *check > 31 && *check != '\"' && *check != '\\')
+            {
+            }
+          else
+            {
+              hasEscapes = true;
+              break;
+            }
+          check++;
+        }
+      if (!hasEscapes)
+        {
+          this->print(ptr);
+          this->print('\"');
+          return 0;
+        }
       while (*ptr != 0)
         {
           if ((unsigned char) *ptr > 31 && *ptr != '\"' && *ptr != '\\')
