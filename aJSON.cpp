@@ -103,6 +103,12 @@ aJsonStream::write(uint8_t ch)
 }
 
 size_t
+aJsonStream::write(const uint8_t *str, size_t len)
+{
+  return stream()->write(str, len);
+}
+
+size_t
 aJsonStream::readBytes(uint8_t *buffer, size_t len)
 {
   for (size_t i = 0; i < len; i++)

@@ -114,6 +114,7 @@ protected:
 
 	/* Inherited from class Print. */
 	virtual size_t write(uint8_t ch);
+	virtual size_t write(const uint8_t *str, size_t len);
 
 	/* stream attribute is used only from virtual functions,
 	 * therefore an object inheriting aJsonStream may avoid
