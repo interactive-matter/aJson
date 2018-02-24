@@ -434,7 +434,7 @@ aJsonStream::printStringPtr(const char *str)
 {
   this->print('"');
   char* ptr = (char*) str;
-  if (ptr != NULL)
+  if (ptr != NULL && *ptr != '\0')
     {
       while (*ptr != 0)
         {
