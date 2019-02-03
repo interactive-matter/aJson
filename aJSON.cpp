@@ -142,7 +142,7 @@ aJsonEEPROMStream::available()
   if (bucket != EOF)
     return true;
 
-#if defined(__SAM3X8E__) or defined(ARDUINO_ARCH_STM32F1)
+#if defined(__SAM3X8E__) or defined(ARDUINO_ARCH_STM32F1) or defined (NRF5)
   while ((ch!=EOF) && (offset<32000))  ///fix it
 #else
   while (addr+offset<EEPROM.length())
