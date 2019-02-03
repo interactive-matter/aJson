@@ -49,6 +49,9 @@
 #if defined(__SAM3X8E__)
 #include <DueFlashStorage.h>
 extern DueFlashStorage EEPROM;
+#elif defined(NRF5)
+#include <NRFFlashStorage.h>
+extern NRFFlashStorage EEPROM;
 #else
 #include <EEPROM.h>
 #endif
