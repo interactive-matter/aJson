@@ -49,7 +49,7 @@
 #if defined(__SAM3X8E__)
 #include <DueFlashStorage.h>
 extern DueFlashStorage EEPROM;
-#elif defined(NRF5) || defined (ARDUINO_ARCH_ESP32)
+#elif defined(NRF5) || defined (ARDUINO_ARCH_ESP32) || defined (ARDUINO_ARCH_STM32)
 #include <NRFFlashStorage.h>
 extern NRFFlashStorage EEPROM;
 #elif defined(ARDUINO_ARCH_ESP8266)
@@ -144,7 +144,7 @@ aJsonEEPROMStream::available()
   if (bucket != EOF)
     return true;
 
-#if defined(__SAM3X8E__) or defined(ARDUINO_ARCH_STM32F1) or defined (NRF5) or defined (ARDUINO_ARCH_ESP32)
+#if defined(__SAM3X8E__) or defined(ARDUINO_ARCH_STM32F1) or defined (NRF5) or defined (ARDUINO_ARCH_ESP32) or defined (ARDUINO_ARCH_STM32)
   while ((ch!=EOF) && (offset<32000))  ///fix it
 #else
   while (addr+offset<EEPROM.length())
