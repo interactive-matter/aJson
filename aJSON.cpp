@@ -144,7 +144,7 @@ aJsonEEPROMStream::available()
   if (bucket != EOF)
     return true;
 
-#if defined(__SAM3X8E__) or defined(ARDUINO_ARCH_STM32F1) or defined (NRF5) or defined (ARDUINO_ARCH_ESP32) or defined (ARDUINO_ARCH_STM32)
+#if defined(__SAM3X8E__) or defined(ARDUINO_ARCH_STM32) or defined (NRF5) or defined (ARDUINO_ARCH_ESP32) or defined (ARDUINO_ARCH_STM32)
   while ((ch!=EOF) && (offset<32000))  ///fix it
 #else
   while (addr+offset<EEPROM.length())
@@ -177,10 +177,10 @@ int aJsonEEPROMStream::putEOF(void)
        res = write(EOF);
        #if defined(ARDUINO_ARCH_ESP8266)
          // write the data to EEPROM
-       res  = EEPROM.commit();
+       res  = EEPROM.commitReset();
+       Serial.println((res) ? "Commit OK" : "Commit failed");
        #endif.
-       //Serial.println((res) ? "Commit OK" : "Commit failed");
-       return res;
+        return res;
        }
 
 size_t
