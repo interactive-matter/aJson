@@ -190,10 +190,7 @@ public:
                 offset=0;
         }
        
-       int putEOF(void)
-       {
-       return write(EOF);
-       }
+        int putEOF(void);
 	virtual bool available();
 
 private:
