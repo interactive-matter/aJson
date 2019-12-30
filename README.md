@@ -70,7 +70,7 @@ Parsing JSON
 To parse such a structure with aJson you simply convert it to a object tree:
 
 ```c
-aJsonObject* jsonObject = aJson.parse(json_string);
+aJsonObject* root = aJson.parse(json_string);
 ```
 
 (assuming you got the JSON string in the variable json_string - as a char*)
