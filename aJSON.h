@@ -235,14 +235,14 @@ public:
 	aJsonObject* createNull();
 	aJsonObject* createItem(bool b);
 	aJsonObject* createItem(char b);
-	aJsonObject* createItem(int num);
+	aJsonObject* createItem(long int num);
 	aJsonObject* createItem(double num);
 	aJsonObject* createItem(const char *string);
 	aJsonObject* createArray();
 	aJsonObject* createObject();
 
 	// These utilities create an Array of count items.
-	aJsonObject* createIntArray(int *numbers, unsigned char count);
+	aJsonObject* createIntArray(long int *numbers, unsigned char count);
 	aJsonObject* createFloatArray(double *numbers, unsigned char count);
 	aJsonObject* createDoubleArray(double *numbers, unsigned char count);
 	aJsonObject* createStringArray(const char **strings, unsigned char count);
@@ -270,7 +270,7 @@ public:
 
 	void addNullToObject(aJsonObject* object, const char* name);
 	void addBooleanToObject(aJsonObject* object, const char* name, bool b);
-	void addNumberToObject(aJsonObject* object, const char* name, int n);
+	void addNumberToObject(aJsonObject* object, const char* name, long int n);
         void addNumberToObject(aJsonObject* object, const char* name, double n);
 	void addStringToObject(aJsonObject* object, const char* name,
 					const char* s);

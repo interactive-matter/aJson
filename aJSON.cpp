@@ -300,7 +300,7 @@ aJsonClass::deleteItem(aJsonObject *c)
 int
 aJsonStream::parseNumber(aJsonObject *item)
 {
-  int i = 0;
+  long int i = 0;
   int sign = 1;
 
   int in = this->getch();
@@ -1206,13 +1206,13 @@ aJsonClass::createItem(char b)
 }
 
 aJsonObject*
-aJsonClass::createItem(int num)
+aJsonClass::createItem(long int num)
 {
   aJsonObject *item = newItem();
   if (item)
     {
       item->type = aJson_Int;
-      item->valueint = (int) num;
+      item->valueint = (long int) num;
     }
   return item;
 }
@@ -1260,7 +1260,7 @@ aJsonClass::createObject()
 
 // Create Arrays:
 aJsonObject*
-aJsonClass::createIntArray(int *numbers, unsigned char count)
+aJsonClass::createIntArray(long int *numbers, unsigned char count)
 {
   unsigned char i;
   aJsonObject *n = 0, *p = 0, *a = createArray();
@@ -1340,7 +1340,7 @@ aJsonClass::addBooleanToObject(aJsonObject* object, const char* name, bool b)
 }
 
 void
-aJsonClass::addNumberToObject(aJsonObject* object, const char* name, int n)
+aJsonClass::addNumberToObject(aJsonObject* object, const char* name, long int n)
 {
   addItemToObject(object, name, createItem(n));
 }
