@@ -26,7 +26,11 @@
 #include "stringbuffer.h"
 
 //Default buffer size for strings
+#if defined(ARDUINO_ARCH_AVR)
+#define BUFFER_SIZE 64
+#else
 #define BUFFER_SIZE 256
+#endif
 //there is a static buffer allocated, which is used to decode strings to
 //strings cannot be longer than the buffer
 char global_buffer[BUFFER_SIZE];
