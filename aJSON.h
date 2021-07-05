@@ -181,7 +181,7 @@ private:
         virtual int getch();
         FILE* fl;
 };
-
+/*
 class aJsonEEPROMStream : public aJsonStream {
 public:
         aJsonEEPROMStream(int _addr)
@@ -202,6 +202,7 @@ private:
         int offset;
 };
 
+*/
 
 class aJsonClass {
 	/******************************************************************************

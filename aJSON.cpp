@@ -46,6 +46,7 @@
 #include "aJSON.h"
 #include "utility/stringbuffer.h"
 #include <stdio.h>
+/*
 #if defined(__SAM3X8E__)
 #include <DueFlashStorage.h>
 extern DueFlashStorage EEPROM;
@@ -57,6 +58,7 @@ extern NRFFlashStorage EEPROM;
 #else
 #include <EEPROM.h>
 #endif
+*/
 /******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -123,7 +125,7 @@ aJsonFileStream::getch()
   return fgetc(fl);
 }
 
-
+/*
 int
 aJsonEEPROMStream::getch()
 { char c;
@@ -151,7 +153,6 @@ aJsonEEPROMStream::available()
 #endif    
 
     {
-      /* Make an effort to skip whitespace. */
       ch = this->getch();
       
       if (ch > 32)
@@ -182,6 +183,7 @@ int aJsonEEPROMStream::putEOF(void)
        #endif.
         return res;
        }
+*/
 
 size_t
 aJsonStream::write(uint8_t ch)
