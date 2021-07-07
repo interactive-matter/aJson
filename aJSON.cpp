@@ -36,14 +36,29 @@
 #include <stdlib.h>
 #include <float.h>
 #include <ctype.h>
-#ifdef __AVR__
+#ifdef __AVR__ 
 #include <avr/pgmspace.h>
+#elif defined(__arm__) 
+#include <sam/pgmspace.h>
 #else
 #include <pgmspace.h>
 #endif
 #include "aJSON.h"
 #include "utility/stringbuffer.h"
-
+#include <stdio.h>
+/*
+#if defined(__SAM3X8E__)
+#include <DueFlashStorage.h>
+extern DueFlashStorage EEPROM;
+#elif defined(NRF5) || defined (ARDUINO_ARCH_ESP32) || defined (ARDUINO_ARCH_STM32)
+#include <NRFFlashStorage.h>
+extern NRFFlashStorage EEPROM;
+#elif defined(ARDUINO_ARCH_ESP8266)
+#include <ESP_EEPROM.h>
+#else
+#include <EEPROM.h>
+#endif
+*/
 /******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -51,7 +66,7 @@
 #define BUFFER_DEFAULT_SIZE 4
 
 //how much digits after . for float
-#define FLOAT_PRECISION 5
+#define FLOAT_PRECISION 1
 
 
 bool
@@ -81,6 +96,7 @@ aJsonStream::getch()
       bucket = EOF;
       return ret;
     }
+
   // In case input was malformed - can happen, this is the
   // real world, we can end up in a situation where the parser
   // would expect another character and end up stuck on
@@ -96,9 +112,82 @@ aJsonStream::ungetch(char ch)
   bucket = ch;
 }
 
+
+int
+aJsonFileStream::getch()
+{
+  if (bucket != EOF)
+    {
+      int ret = bucket;
+      bucket = EOF;
+      return ret;
+    }
+  return fgetc(fl);
+}
+
+/*
+int
+aJsonEEPROMStream::getch()
+{ char c;
+  if (bucket != EOF)
+    {
+      int ret = bucket;
+      bucket = EOF;
+      return ret;
+    }
+    c=EEPROM.read(addr+offset++);
+  return c;
+}
+
+bool
+aJsonEEPROMStream::available()
+{
+  int ch =0;
+  if (bucket != EOF)
+    return true;
+
+#if defined(__SAM3X8E__) or defined(ARDUINO_ARCH_STM32) or defined (NRF5) or defined (ARDUINO_ARCH_ESP32) or defined (ARDUINO_ARCH_STM32)
+  while ((ch!=EOF) && (offset<32000))  ///fix it
+#else
+  while (addr+offset<EEPROM.length())
+#endif    
+
+    {
+      ch = this->getch();
+      
+      if (ch > 32)
+       {
+         this->ungetch(ch);
+         return true;
+       }
+    }
+  return false;
+  }    
+
+
+size_t
+aJsonEEPROMStream::write(uint8_t ch)
+{
+EEPROM.write(addr+offset++,(char)ch);
+return 1;
+}
+
+int aJsonEEPROMStream::putEOF(void)
+       {
+       int res;
+       res = write(EOF);
+       #if defined(ARDUINO_ARCH_ESP8266)
+         // write the data to EEPROM
+       res  = EEPROM.commitReset();
+       Serial.println((res) ? "Commit OK" : "Commit failed");
+       #endif.
+        return res;
+       }
+*/
+
 size_t
 aJsonStream::write(uint8_t ch)
-{
+{ 
   return stream()->write(ch);
 }
 
@@ -174,7 +263,6 @@ aJsonStringStream::write(uint8_t ch)
   return 1;
 }
 
-
 // Internal constructor.
 aJsonObject*
 aJsonClass::newItem()
@@ -214,7 +302,7 @@ aJsonClass::deleteItem(aJsonObject *c)
 int
 aJsonStream::parseNumber(aJsonObject *item)
 {
-  int i = 0;
+  long int i = 0;
   int sign = 1;
 
   int in = this->getch();
@@ -510,7 +598,7 @@ aJsonStream::skip()
 // Utility to flush our buffer in case it contains garbage
 // since the parser will return the buffer untouched if it
 // cannot understand it.
-int
+void
 aJsonStream::flush()
 {
   int in = this->getch();
@@ -518,7 +606,7 @@ aJsonStream::flush()
   {
     in = this->getch();
   }
-  return EOF;
+  return;// EOF;
 }
 
 
@@ -1120,13 +1208,13 @@ aJsonClass::createItem(char b)
 }
 
 aJsonObject*
-aJsonClass::createItem(int num)
+aJsonClass::createItem(long int num)
 {
   aJsonObject *item = newItem();
   if (item)
     {
       item->type = aJson_Int;
-      item->valueint = (int) num;
+      item->valueint = (long int) num;
     }
   return item;
 }
@@ -1174,7 +1262,7 @@ aJsonClass::createObject()
 
 // Create Arrays:
 aJsonObject*
-aJsonClass::createIntArray(int *numbers, unsigned char count)
+aJsonClass::createIntArray(long int *numbers, unsigned char count)
 {
   unsigned char i;
   aJsonObject *n = 0, *p = 0, *a = createArray();
@@ -1254,7 +1342,7 @@ aJsonClass::addBooleanToObject(aJsonObject* object, const char* name, bool b)
 }
 
 void
-aJsonClass::addNumberToObject(aJsonObject* object, const char* name, int n)
+aJsonClass::addNumberToObject(aJsonObject* object, const char* name, long int n)
 {
   addItemToObject(object, name, createItem(n));
 }
