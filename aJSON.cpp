@@ -510,7 +510,7 @@ aJsonStream::skip()
 // Utility to flush our buffer in case it contains garbage
 // since the parser will return the buffer untouched if it
 // cannot understand it.
-int
+void
 aJsonStream::flush()
 {
   int in = this->getch();
@@ -518,7 +518,7 @@ aJsonStream::flush()
   {
     in = this->getch();
   }
-  return EOF;
+  return;
 }
 
 
