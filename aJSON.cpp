@@ -46,19 +46,7 @@
 #include "aJSON.h"
 #include "utility/stringbuffer.h"
 #include <stdio.h>
-/*
-#if defined(__SAM3X8E__)
-#include <DueFlashStorage.h>
-extern DueFlashStorage EEPROM;
-#elif defined(NRF5) || defined (ARDUINO_ARCH_ESP32) || defined (ARDUINO_ARCH_STM32)
-#include <NRFFlashStorage.h>
-extern NRFFlashStorage EEPROM;
-#elif defined(ARDUINO_ARCH_ESP8266)
-#include <ESP_EEPROM.h>
-#else
-#include <EEPROM.h>
-#endif
-*/
+
 /******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -125,65 +113,6 @@ aJsonFileStream::getch()
   return fgetc(fl);
 }
 
-/*
-int
-aJsonEEPROMStream::getch()
-{ char c;
-  if (bucket != EOF)
-    {
-      int ret = bucket;
-      bucket = EOF;
-      return ret;
-    }
-    c=EEPROM.read(addr+offset++);
-  return c;
-}
-
-bool
-aJsonEEPROMStream::available()
-{
-  int ch =0;
-  if (bucket != EOF)
-    return true;
-
-#if defined(__SAM3X8E__) or defined(ARDUINO_ARCH_STM32) or defined (NRF5) or defined (ARDUINO_ARCH_ESP32) or defined (ARDUINO_ARCH_STM32)
-  while ((ch!=EOF) && (offset<32000))  ///fix it
-#else
-  while (addr+offset<EEPROM.length())
-#endif    
-
-    {
-      ch = this->getch();
-      
-      if (ch > 32)
-       {
-         this->ungetch(ch);
-         return true;
-       }
-    }
-  return false;
-  }    
-
-
-size_t
-aJsonEEPROMStream::write(uint8_t ch)
-{
-EEPROM.write(addr+offset++,(char)ch);
-return 1;
-}
-
-int aJsonEEPROMStream::putEOF(void)
-       {
-       int res;
-       res = write(EOF);
-       #if defined(ARDUINO_ARCH_ESP8266)
-         // write the data to EEPROM
-       res  = EEPROM.commitReset();
-       Serial.println((res) ? "Commit OK" : "Commit failed");
-       #endif.
-        return res;
-       }
-*/
 
 size_t
 aJsonStream::write(uint8_t ch)
@@ -277,6 +206,7 @@ aJsonClass::newItem()
 void
 aJsonClass::deleteItem(aJsonObject *c)
 {
+  if (!c) return;  
   aJsonObject *next;
   while (c)
     {
@@ -1013,6 +943,7 @@ aJsonStream::printObject(aJsonObject *item)
 unsigned char
 aJsonClass::getArraySize(aJsonObject *array)
 {
+  if (!array) return 0;
   aJsonObject *c = array->child;
   unsigned char i = 0;
   while (c)
@@ -1022,6 +953,7 @@ aJsonClass::getArraySize(aJsonObject *array)
 aJsonObject*
 aJsonClass::getArrayItem(aJsonObject *array, unsigned char item)
 {
+  if (!array) return NULL;
   aJsonObject *c = array->child;
   while (c && item > 0)
     item--, c = c->next;
@@ -1030,6 +962,7 @@ aJsonClass::getArrayItem(aJsonObject *array, unsigned char item)
 aJsonObject*
 aJsonClass::getObjectItem(aJsonObject *object, const char *string)
 {
+  if (!object) return NULL;
   aJsonObject *c = object->child;
   while (c && strcasecmp(c->name, string))
     c = c->next;
@@ -1061,6 +994,7 @@ aJsonClass::createReference(aJsonObject *item)
 void
 aJsonClass::addItemToArray(aJsonObject *array, aJsonObject *item)
 {
+  if (!array) return;
   aJsonObject *c = array->child;
   if (!item)
     return;
@@ -1101,6 +1035,7 @@ aJsonClass::addItemReferenceToObject(aJsonObject *object, const char *string,
 aJsonObject*
 aJsonClass::detachItemFromArray(aJsonObject *array, unsigned char which)
 {
+  if (!array) return NULL;
   aJsonObject *c = array->child;
   while (c && which > 0)
     c = c->next, which--;
@@ -1124,6 +1059,7 @@ aJsonObject*
 aJsonClass::detachItemFromObject(aJsonObject *object, const char *string)
 {
   unsigned char i = 0;
+  if (!object) return NULL;
   aJsonObject *c = object->child;
   while (c && strcasecmp(c->name, string))
     i++, c = c->next;
@@ -1142,6 +1078,7 @@ void
 aJsonClass::replaceItemInArray(aJsonObject *array, unsigned char which,
     aJsonObject *newitem)
 {
+  if (!array) return;
   aJsonObject *c = array->child;
   while (c && which > 0)
     c = c->next, which--;
