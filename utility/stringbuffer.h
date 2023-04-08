@@ -24,7 +24,7 @@
 
 #ifndef STRINGBUFFER_H_
 #define STRINGBUFFER_H_
-
+#include <Arduino.h>
 typedef struct
 {
   char* string;
@@ -32,11 +32,12 @@ typedef struct
   unsigned int string_length;
 } string_buffer;
 
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
+extern void debugPrint(const char*);
   string_buffer*
   stringBufferCreate(void);
 
@@ -49,7 +50,24 @@ extern "C"
   void
   stringBufferFree(string_buffer* buffer);
 
+typedef struct string_card string_card;
+struct string_card
+{
+  char* string;
+  uint8_t used;
+  string_card * next;
+};
+
+  
+
+  string_card *findString(char *);
+  char *newString(const char *);
+  void  freeString(char *); 
+  void compressList();
+
+
 #ifdef __cplusplus
 }
 #endif
+
 #endif /* STRINGBUFFER_H_ */

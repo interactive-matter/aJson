@@ -217,11 +217,11 @@ aJsonClass::deleteItem(aJsonObject *c)
         }
       if ((c->type == aJson_String) && c->valuestring)
         {
-          free(c->valuestring);
+          freeString(c->valuestring);
         }
       if (c->name)
         {
-          free(c->name);
+          freeString(c->name);
         }
       free(c);
       c = next;
@@ -1016,8 +1016,8 @@ aJsonClass::addItemToObject(aJsonObject *object, const char *string,
   if (!item)
     return;
   if (item->name)
-    free(item->name);
-  item->name = strdup(string);
+    freeString(item->name);
+  item->name = newString(string);
   addItemToArray(object, item);
 }
 void
@@ -1105,7 +1105,7 @@ aJsonClass::replaceItemInObject(aJsonObject *object, const char *string,
     i++, c = c->next;
   if (c)
     {
-      newitem->name = strdup(string);
+      newitem->name = newString(string);
       replaceItemInArray(object, i, newitem);
     }
 }
@@ -1175,7 +1175,8 @@ aJsonClass::createItem(const char *string)
   if (item)
     {
       item->type = aJson_String;
-      item->valuestring = strdup(string);
+     /// item->valuestring = strdup(string);
+     item->valuestring = newString(string);
     }
   return item;
 }
@@ -1298,5 +1299,7 @@ aJsonClass::addStringToObject(aJsonObject* object, const char* name,
 }
 
 //TODO conversion routines btw. float & int types?
+void debugPrint(const char* s){Serial.print(s);}
 
 aJsonClass aJson;
+

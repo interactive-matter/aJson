@@ -42,6 +42,7 @@
 #define aJson_Array 5
 #define aJson_Object 6
 
+
 ////#define aJson_IsReference 128
 #define aJson_IsReference 8
 
@@ -288,4 +289,12 @@ private:
 
 extern aJsonClass aJson;
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+void debugPrint(const char* s);
+#ifdef __cplusplus
+}
+#endif
 #endif
