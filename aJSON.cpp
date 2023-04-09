@@ -511,13 +511,14 @@ aJsonStream::printString(aJsonObject *item)
 // Utility to jump whitespace and cr/lf
 int
 aJsonStream::skip()
-{
+{ 
+  int skipCounter=256;
   int in = this->getch();
-  while (in != EOF && (in <= 32))
+  while (in != EOF && (in <= 32) && skipCounter--)
     {
       in = this->getch();
     }
-  if (in != EOF)
+  if ((in != EOF) && skipCounter)
     {
       this->ungetch(in);
       return 0;
@@ -566,11 +567,15 @@ aJsonClass::parse(aJsonStream* stream, char** filter)
     }
   aJsonObject *c = newItem();
   if (!c)
+    {
+    //debugPrint("new item fail\n");   
     return NULL; /* memory fail */
+    }
 
   stream->skip();
   if (stream->parseValue(c, filter) == EOF)
     {
+      //debugPrint("del item\n"); 
       deleteItem(c);
       return NULL;
     }

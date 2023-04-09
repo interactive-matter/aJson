@@ -62,7 +62,7 @@ stringBufferCreate(void)
 char
 stringBufferAdd(char value, string_buffer* buffer)
 {
-  if (buffer->string_length >= buffer->memory)
+  if (buffer->string_length >= buffer->memory-1)
     {
       //this has to be enabled after realloc works
       /*char* new_string = (char*) realloc((void*) buffer->string, (buffer->memory
@@ -108,6 +108,7 @@ stringBufferToString(string_buffer* buffer)
   char * result = newString(global_buffer);
   if (result == NULL)
     {
+     // debugPrint(("String allocation error\n")); 
       return NULL;
     }
 
@@ -158,7 +159,7 @@ static string_card stringLib ={NULL,0,NULL};
      string_card * prevCard;
      if (card) 
               { 
-            //    debugPrint(":reused; ");
+                //debugPrint(":reused; ");
                 card->used++;
                 return card->string;
               }
@@ -171,7 +172,7 @@ static string_card stringLib ={NULL,0,NULL};
                             {
                               card->string = strdup(str);
                               card->used=1;
-              //                debugPrint(":added/replaced; ");
+                              //debugPrint(":added/replaced; ");
                               return card->string;
                             }
                 prevCard = card;             
@@ -185,7 +186,7 @@ static string_card stringLib ={NULL,0,NULL};
                     card->string = strdup(str);
                     card->used=1;
                     card->next=NULL;
-   //                 debugPrint(":added ");
+                    //debugPrint(":added ");
                     return card->string;  
                 }            
               }
@@ -199,10 +200,10 @@ static string_card stringLib ={NULL,0,NULL};
     card->used--;
     if (!card->used) 
                         {
-                 //       debugPrint(str);  
+                        //debugPrint(str);  
                         free(card->string);
                         card->string = NULL;
-                //        debugPrint(":removed ");
+                        //debugPrint(":removed ");
                         compressList();
                         }
   } 
@@ -226,4 +227,5 @@ static string_card stringLib ={NULL,0,NULL};
           nextPtr=nextPtr->next;      
           }
   }
+  //debugPrint(("Compressed\n")); 
   }
