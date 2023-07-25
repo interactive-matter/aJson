@@ -511,7 +511,7 @@ aJsonStream::skip()
 // since the parser will return the buffer untouched if it
 // cannot understand it.
 int
-aJsonStream::flush()
+aJsonStream::do_flush()
 {
   int in = this->getch();
   while(in != EOF)
