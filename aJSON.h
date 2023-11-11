@@ -183,28 +183,6 @@ private:
         virtual int getch();
         FILE* fl;
 };
-/*
-class aJsonEEPROMStream : public aJsonStream {
-public:
-        aJsonEEPROMStream(int _addr)
-                : aJsonStream(NULL)
-        {
-                addr=_addr;
-                offset=0;
-        }
-       
-        int putEOF(void);
-	virtual bool available();
-
-private:
-        virtual int getch();
-        virtual size_t write(uint8_t ch);
-
-        int addr;
-        int offset;
-};
-
-*/
 
 class aJsonClass {
 	/******************************************************************************
