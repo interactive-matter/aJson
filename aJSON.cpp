@@ -54,7 +54,7 @@
 #define BUFFER_DEFAULT_SIZE 4
 
 //how much digits after . for float
-#define FLOAT_PRECISION 1
+#define FLOAT_PRECISION 2
 
 
 bool
