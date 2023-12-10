@@ -41,8 +41,11 @@
 #define aJson_String 4
 #define aJson_Array 5
 #define aJson_Object 6
+#define aJson_Reserved 7
 
-#define aJson_IsReference 128
+
+////#define aJson_IsReference 128
+#define aJson_IsReference 8
 
 #ifndef EOF
 #define EOF -1
@@ -52,17 +55,17 @@
 
 // The aJson structure:
 typedef struct aJsonObject {
-        char *name; // The item's name string, if this item is the child of, or is in the list of subitems of an object.
+    char *name; // The item's name string, if this item is the child of, or is in the list of subitems of an object.
 	struct aJsonObject *next, *prev; // next/prev allow you to walk array/object chains. Alternatively, use GetArraySize/GetArrayItem/GetObjectItem
 	struct aJsonObject *child; // An array or object item will have a child pointer pointing to a chain of the items in the array/object.
 
-	char type; // The type of the item, as above.
-
+	unsigned char type:4; // The type of the item, as above.
+    unsigned char subtype:4; // User defined field 
 	union {
 		char *valuestring; // The item's string, if type==aJson_String
 		char valuebool; //the items value for true & false
-		int valueint; // The item's value, if type==aJson_Int
-		double valuefloat; // The item's value, if type==aJson_Float
+		long int valueint; // The item's value, if type==aJson_Int
+		float valuefloat; // The item's value, if type==aJson_Float
 	};
 } aJsonObject;
 
@@ -89,7 +92,7 @@ public:
 	int printString(aJsonObject *item);
 
 	int skip();
-	int flush();
+	void flush();
 
 	int parseValue(aJsonObject *item, char** filter);
 	int printValue(aJsonObject *item);
@@ -167,6 +170,20 @@ private:
 	size_t inbuf_len, outbuf_len;
 };
 
+class aJsonFileStream : public aJsonStream {
+public:
+        aJsonFileStream(FILE* _fl)
+                : aJsonStream(NULL)
+        {
+                fl=_fl;
+        }
+
+
+private:
+        virtual int getch();
+        FILE* fl;
+};
+
 class aJsonClass {
 	/******************************************************************************
 	 * Constructors
@@ -199,14 +216,14 @@ public:
 	aJsonObject* createNull();
 	aJsonObject* createItem(bool b);
 	aJsonObject* createItem(char b);
-	aJsonObject* createItem(int num);
+	aJsonObject* createItem(long int num);
 	aJsonObject* createItem(double num);
 	aJsonObject* createItem(const char *string);
 	aJsonObject* createArray();
 	aJsonObject* createObject();
 
 	// These utilities create an Array of count items.
-	aJsonObject* createIntArray(int *numbers, unsigned char count);
+	aJsonObject* createIntArray(long int *numbers, unsigned char count);
 	aJsonObject* createFloatArray(double *numbers, unsigned char count);
 	aJsonObject* createDoubleArray(double *numbers, unsigned char count);
 	aJsonObject* createStringArray(const char **strings, unsigned char count);
@@ -234,7 +251,7 @@ public:
 
 	void addNullToObject(aJsonObject* object, const char* name);
 	void addBooleanToObject(aJsonObject* object, const char* name, bool b);
-	void addNumberToObject(aJsonObject* object, const char* name, int n);
+	void addNumberToObject(aJsonObject* object, const char* name, long int n);
         void addNumberToObject(aJsonObject* object, const char* name, double n);
 	void addStringToObject(aJsonObject* object, const char* name,
 					const char* s);
@@ -251,4 +268,12 @@ private:
 
 extern aJsonClass aJson;
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+void debugPrint(const char* s);
+#ifdef __cplusplus
+}
+#endif
 #endif
