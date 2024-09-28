@@ -24,9 +24,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include "stringbuffer.h"
+#include <Arduino.h>
+//#include <aJSON.h>
+
 
 //Default buffer size for strings
+#if defined(ARDUINO_ARCH_AVR)
+#define BUFFER_SIZE 64
+#else
 #define BUFFER_SIZE 256
+#endif
 //there is a static buffer allocated, which is used to decode strings to
 //strings cannot be longer than the buffer
 char global_buffer[BUFFER_SIZE];
@@ -55,7 +62,7 @@ stringBufferCreate(void)
 char
 stringBufferAdd(char value, string_buffer* buffer)
 {
-  if (buffer->string_length >= buffer->memory)
+  if (buffer->string_length >= buffer->memory-1)
     {
       //this has to be enabled after realloc works
       /*char* new_string = (char*) realloc((void*) buffer->string, (buffer->memory
@@ -95,12 +102,20 @@ stringBufferToString(string_buffer* buffer)
    buffer->string=NULL;
    free(buffer);
    return string;*/
-  char* result = malloc(buffer->string_length * sizeof(char));
+
+  ///char* result = malloc(buffer->string_length * sizeof(char));
+  
+  char * result = newString(global_buffer);
   if (result == NULL)
     {
+     // debugPrint(("String allocation error\n")); 
       return NULL;
     }
-  strcpy(result, global_buffer);
+
+  ///strcpy(result, global_buffer);
+
+ 
+
   buffer->string = NULL;
   free(buffer);
   return result;
@@ -123,3 +138,94 @@ stringBufferFree(string_buffer* buffer)
   free(buffer);
 }
 
+static string_card stringLib ={NULL,0,NULL}; 
+
+  string_card *findString(char * str)
+  {
+    string_card * card = &stringLib;
+    if (!str) return NULL;
+    do
+    {
+       if (card->string && !strcmp(str,card->string)) return card;
+       card = card->next;
+    } while (card);
+    return NULL;
+  }
+
+  char *newString(const char * str)
+  { 
+    //debugPrint(str);
+     string_card * card = findString(str);
+     string_card * prevCard;
+     if (card) 
+              { 
+                //debugPrint(":reused; ");
+                card->used++;
+                return card->string;
+              }
+     else
+              {
+                card = &stringLib;
+                do
+                {
+                  if(!card->string)
+                            {
+                              card->string = strdup(str);
+                              card->used=1;
+                              //debugPrint(":added/replaced; ");
+                              return card->string;
+                            }
+                prevCard = card;             
+                card = card->next;
+                } while (card);
+
+                card = malloc (sizeof(string_card));
+                if (card)
+                {
+                    prevCard->next = card;
+                    card->string = strdup(str);
+                    card->used=1;
+                    card->next=NULL;
+                    //debugPrint(":added ");
+                    return card->string;  
+                }            
+              }
+  return NULL;                     
+  }
+
+  void  freeString(char * str)
+  {
+    string_card * card = findString(str);
+    if (!card) return;
+    card->used--;
+    if (!card->used) 
+                        {
+                        //debugPrint(str);  
+                        free(card->string);
+                        card->string = NULL;
+                        //debugPrint(":removed ");
+                        compressList();
+                        }
+  } 
+
+  void compressList()
+  {
+  string_card * prevPtr = &stringLib;
+  string_card * nextPtr = prevPtr->next; 
+  while (nextPtr)
+  {
+   if (!nextPtr->string) 
+          {
+            //removing card
+            prevPtr->next=nextPtr->next;
+            free (nextPtr);
+            nextPtr=prevPtr->next;
+          }
+    else 
+          {
+          prevPtr=nextPtr;  
+          nextPtr=nextPtr->next;      
+          }
+  }
+  //debugPrint(("Compressed\n")); 
+  }

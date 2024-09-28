@@ -3,6 +3,7 @@
   Copyright (c) 2010, Interactive Matter, Marcus Nowotny
 
   Based on the cJSON Library, Copyright (C) 2009 Dave Gamble
+  Updated by anklimov - changelog on the bottom of readme
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -295,3 +296,58 @@ As soon as you call aJson.print(), it renders the structure to text.
 
 
 Have Fun!
+
+New in this fork:
+adding class "aJsonFileStream" inherited from aJsonStream in order to backward- compatibility with HTTPClient library
+Now is possible to operate directly with *FILE like streams, returned by HttpClient library and avoid intermediate buffering
+
+Code example:
+
+
+int getConfig()
+{
+    FILE* result;
+    int returnCode ;
+
+    HTTPClient hclient("192.168.88.2",hserver,80);
+    result = hclient.getURI( FEED_URI);
+    returnCode = hclient.getLastReturnCode();
+
+    if (result!=NULL) {
+      if (returnCode==200) {
+
+          Serial.println("got Config :"); 
+             aJsonFileStream as=aJsonFileStream(result);  
+          root = aJson.parse(&as);
+
+     hclient.closeStream(result);  // this is very important -- be sure to close the STREAM
+
+        if (!root)
+          {
+            Serial.println("parseObject() failed");
+           return -11;
+            } else   
+
+          {
+
+            char * outstr=aJson.print(root);
+            Serial.println(outstr);
+             items = aJson.getObjectItem(root,"items");            
+          }
+
+            } 
+    else {
+      Serial.print("ERROR: Server returned ");
+      Serial.println(returnCode);
+      return -11;
+
+    }
+
+    } 
+    else {
+      Serial.println("failed to connect");
+      Serial.println(" try again in 5 seconds");
+      return -11;
+                }
+  return 2;
+}
